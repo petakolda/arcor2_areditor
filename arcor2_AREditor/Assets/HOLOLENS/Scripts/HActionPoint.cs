@@ -153,7 +153,7 @@ public abstract class HActionPoint : HInteractiveObject, IActionPointParentH
         public Dictionary<string, IO.Swagger.Model.Pose> GetPoses() {
             Dictionary<string, IO.Swagger.Model.Pose> poses = new Dictionary<string, IO.Swagger.Model.Pose>();
             foreach (IO.Swagger.Model.NamedOrientation orientation in Data.Orientations) {
-                poses.Add(orientation.Id, new IO.Swagger.Model.Pose(orientation.Orientation, Data.Position));
+                poses.Add(orientation.Id, new IO.Swagger.Model.Pose(orientation: orientation.Orientation, position: Data.Position));
             }
             return poses;
         }

@@ -10,8 +10,7 @@ using TriLibCore;
 using TriLibCore.General;
 using UnityEngine;
 using UnityEngine.Networking;
-public class MeshImporterH : Singleton<MeshImporterH>
-{
+public class MeshImporterH : Singleton<MeshImporterH> {
     public delegate void ImportedMeshEventHandler(object sender, ImportedMeshEventArgsH args);
     public event ImportedMeshEventHandler OnMeshImported;
 
@@ -27,10 +26,10 @@ public class MeshImporterH : Singleton<MeshImporterH>
     /// <param name="mesh"></param>
     /// <param name="aoId">ID of action object which is asociated with the mesh</param>
     public void LoadModel(IO.Swagger.Model.Mesh mesh, string aoId) {
-        if (CheckIfNewerRobotModelExists(mesh.Id, mesh.DataId)) {
-            StartCoroutine(DownloadMesh(mesh.Id, mesh.DataId, aoId));
+        if (CheckIfNewerRobotModelExists(mesh.Id, mesh.AssetId)) {
+            StartCoroutine(DownloadMesh(mesh.Id, mesh.AssetId, aoId));
         } else {
-            StartCoroutine(ImportMeshWhenReady(string.Format("{0}/meshes/{1}/{2}", Application.persistentDataPath, mesh.Id, mesh.DataId), aoId, mesh.DataId));
+            StartCoroutine(ImportMeshWhenReady(string.Format("{0}/meshes/{1}/{2}", Application.persistentDataPath, mesh.Id, mesh.AssetId), aoId, mesh.AssetId));
         }
     }
 
@@ -50,14 +49,16 @@ public class MeshImporterH : Singleton<MeshImporterH>
 
         GameObject loadedObject = new GameObject("ImportedMeshObject");
         if (Path.GetExtension(path).ToLower() == ".dae") {
-        //Debug.LogError("importing dae mesh name: " + path);
+            //Debug.LogError("importing dae mesh name: " + path);
             StreamReader reader = File.OpenText(path);
             string daeFile = reader.ReadToEnd();
 
             // Requires Simple Collada asset from Unity Asset Store: https://assetstore.unity.com/packages/tools/input-management/simple-collada-19579
             // Supports: DAE
             StartCoroutine(ColladaImporter.Instance.ImportAsync(daeFile, Quaternion.identity, Vector3.one, Vector3.zero,
-                onModelImported: delegate (GameObject loadedGameObject) { OnMeshImported?.Invoke(this, new ImportedMeshEventArgsH(loadedGameObject, aoId));},
+                onModelImported: delegate (GameObject loadedGameObject) {
+                    OnMeshImported?.Invoke(this, new ImportedMeshEventArgsH(loadedGameObject, aoId));
+                },
                 wrapperGameObject: loadedObject));
 
         } else {
@@ -65,8 +66,8 @@ public class MeshImporterH : Singleton<MeshImporterH>
             // Supports: FBX, OBJ, GLTF2, STL, PLY, 3MF
             AssetLoaderOptions assetLoaderOptions = AssetLoader.CreateDefaultLoaderOptions();
             AssetLoader.LoadModelFromFile(path, null, delegate (AssetLoaderContext assetLoaderContext) {
-                 if (Path.GetExtension(path).ToLower() == ".stl") {
-                    assetLoaderContext.RootGameObject.transform.Rotate(0f, 180f, 0f);
+                if (Path.GetExtension(path).ToLower() == ".stl") {
+                    assetLoaderContext.RootGameObject.transform.Rotate(0f, 90f, 0f);
                 }
                 OnMeshImported?.Invoke(this, new ImportedMeshEventArgsH(assetLoaderContext.WrapperGameObject, aoId));
             }, null, assetLoaderOptions: assetLoaderOptions, onError: OnModelLoadError, wrapperGameObject: loadedObject);
@@ -82,30 +83,20 @@ public class MeshImporterH : Singleton<MeshImporterH>
     /// <returns></returns>
     private IEnumerator DownloadMesh(string meshId, string fileName, string aoId) {
 
-        //Debug.LogError("MESH: download started");
-     //   string uri = MainSettingsMenu.Instance.GetProjectServiceURI() + fileName;
-
-               //Debug.LogError("MESH: download started");
-            string uri = PlayerPrefsHelper.LoadString("ProjectServiceURI", "");
-        string suffix =  "/files/";
-        if (string.IsNullOrEmpty(uri))
-            uri = "http://" + WebSocketManagerH.Instance.GetServerDomain() + ":6790" + suffix;
-        else
-            uri = uri + suffix;
-        uri = "http://" + WebSocketManagerH.Instance.GetServerDomain() + ":6790" + suffix +fileName;
+        string uri = WebSocketManagerH.Instance.GetAssetFileURI(fileName);
         using (UnityWebRequest www = UnityWebRequest.Get(uri)) {
             // Request and wait for the desired page.
             yield return www.Send();
             if (www.isNetworkError || www.isHttpError) {
                 Debug.LogError(www.error + " (" + uri + ")");
-//                Notifications.Instance.ShowNotification("Failed to download mesh", www.error);
+                //                Notifications.Instance.ShowNotification("Failed to download mesh", www.error);
             } else {
                 string meshDirectory = string.Format("{0}/meshes/{1}", Application.persistentDataPath, meshId);
                 Directory.CreateDirectory(meshDirectory);
                 string savePath = string.Format("{0}/{1}", meshDirectory, fileName);
                 System.IO.File.WriteAllBytes(savePath, www.downloadHandler.data);
                 meshSources[fileName] = false;
-                   
+
                 //Debug.LogError("MESH: download finished");
                 //if the mesh is zipped, extract it
                 if (Path.GetExtension(savePath).ToLower() == ".zip") {
@@ -127,7 +118,7 @@ public class MeshImporterH : Singleton<MeshImporterH>
                                                     ex is InvalidDataException ||
                                                     ex is UnauthorizedAccessException) {
                         Debug.LogError(ex);
-                       // Notifications.Instance.ShowNotification("Failed to extract mesh", "");
+                        // Notifications.Instance.ShowNotification("Failed to extract mesh", "");
                     }
                 } else { //not *.zip
                     OnMeshDownloaded(meshId, savePath, aoId);
@@ -154,7 +145,7 @@ public class MeshImporterH : Singleton<MeshImporterH>
     private string GetPathToMesh(string meshId) {
         if (Path.GetExtension(meshId).ToLower() == ".zip") {
             string path = string.Format("{0}/meshes/{1}/mesh/", Application.persistentDataPath, meshId);
-            string[] extensions = { "dae", "fbx", "obj", "gltf2", "stl", "ply", "3mf"};
+            string[] extensions = { "dae", "fbx", "obj", "gltf2", "stl", "ply", "3mf" };
             string[] files = { };
             foreach (var extension in extensions) {
                 files = System.IO.Directory.GetFiles(path, "*." + extension);
@@ -168,7 +159,7 @@ public class MeshImporterH : Singleton<MeshImporterH>
     }
 
     private void OnModelLoadError(IContextualizedError obj) {
-   //    Notifications.Instance.ShowNotification("Unable to show mesh ", obj.GetInnerException().Message);
+        //    Notifications.Instance.ShowNotification("Unable to show mesh ", obj.GetInnerException().Message);
         Debug.LogError(obj.GetInnerException().Message);
     }
 
@@ -207,14 +198,14 @@ public class MeshImporterH : Singleton<MeshImporterH>
         }
 
         string uri = PlayerPrefsHelper.LoadString("ProjectServiceURI", "");
-        string suffix =  "/files/";
+        string suffix = "/files/";
         if (string.IsNullOrEmpty(uri))
             uri = "http://" + WebSocketManagerH.Instance.GetServerDomain() + ":6790" + suffix;
         else
             uri = uri + suffix;
-        
-         uri = "http://" + WebSocketManagerH.Instance.GetServerDomain() + ":6790" + suffix +  fileName;
-      //  string uri = MainSettingsMenu.Instance.GetProjectServiceURI() + fileName;
+
+        uri = "http://" + WebSocketManagerH.Instance.GetServerDomain() + ":6790" + suffix + fileName;
+        //  string uri = MainSettingsMenu.Instance.GetProjectServiceURI() + fileName;
         DateTime downloadedZipLastModified = meshFileInfo.LastWriteTime;
         try {
             HttpWebRequest httpWebRequest = (HttpWebRequest) WebRequest.Create(uri);
@@ -232,7 +223,7 @@ public class MeshImporterH : Singleton<MeshImporterH>
             }
         } catch (WebException ex) {
             //Debug.LogError(ex);
-        //   Notifications.Instance.ShowNotification("Failed to get robot model", ex.Message);
+            //   Notifications.Instance.ShowNotification("Failed to get robot model", ex.Message);
             return false;
         }
     }
@@ -274,7 +265,7 @@ public class ImportedMeshEventArgsH : EventArgs {
     }
 
     public string Name {
-        get;set;
+        get; set;
     }
 
     public ImportedMeshEventArgsH(GameObject gameObject, string name) {

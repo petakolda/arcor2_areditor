@@ -10,7 +10,7 @@ public class HStartAction : HStartEndAction
         IO.Swagger.Model.Action prAction = new IO.Swagger.Model.Action(
             flows: new List<IO.Swagger.Model.Flow> {
                 new IO.Swagger.Model.Flow(
-                    new List<string> { "output" }, IO.Swagger.Model.Flow.TypeEnum.Default) },
+                    outputs: new List<string> { "output" }, type: IO.Swagger.Model.Flow.TypeEnum.Default) },
             id: "START",
             name: "START",
             parameters: new List<IO.Swagger.Model.ActionParameter>(),

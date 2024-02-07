@@ -32,7 +32,7 @@ public class GameManagerH : Singleton<GameManagerH>
     /// <summary>
     /// Api version
     /// </summary>        
-    public const string ApiVersion = "0.20.0";
+    public const string ApiVersion = "1.0.0";
 
     /// <summary>
     /// GameObject of scene

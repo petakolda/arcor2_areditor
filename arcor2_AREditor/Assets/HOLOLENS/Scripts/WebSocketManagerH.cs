@@ -11,8 +11,7 @@ using UnityEditor;
 using UnityEngine.Events;
 using Base;
 
-public class WebSocketManagerH : Singleton<WebSocketManagerH>
-{
+public class WebSocketManagerH : Singleton<WebSocketManagerH> {
 
 
     /// <summary>
@@ -44,7 +43,7 @@ public class WebSocketManagerH : Singleton<WebSocketManagerH>
     /// </summary>
     private Dictionary<int, string> responses = new Dictionary<int, string>();
     private Dictionary<int, Tuple<string, UnityAction<string, string>>> responsesCallback = new Dictionary<int, Tuple<string, UnityAction<string, string>>>();
-/// <summary>
+    /// <summary>
     /// Invoked when new end effector pose recieved from server. Contains eef pose.
     /// </summary>
     public event AREditorEventArgs.RobotEefUpdatedEventHandler OnRobotEefUpdated;
@@ -62,11 +61,11 @@ public class WebSocketManagerH : Singleton<WebSocketManagerH>
     public event AREditorEventArgs.ProjectActionPointEventHandler OnActionPointUpdated;
     public event AREditorEventArgs.BareActionPointEventHandler OnActionPointBaseUpdated;
     public event AREditorEventArgs.StringEventHandler OnActionPointRemoved;
-    
-        public event AREditorEventArgs.ActionPointOrientationEventHandler OnActionPointOrientationAdded;
-        public event AREditorEventArgs.ActionPointOrientationEventHandler OnActionPointOrientationUpdated;
-        public event AREditorEventArgs.ActionPointOrientationEventHandler OnActionPointOrientationBaseUpdated;
-        public event AREditorEventArgs.StringEventHandler OnActionPointOrientationRemoved;
+
+    public event AREditorEventArgs.ActionPointOrientationEventHandler OnActionPointOrientationAdded;
+    public event AREditorEventArgs.ActionPointOrientationEventHandler OnActionPointOrientationUpdated;
+    public event AREditorEventArgs.ActionPointOrientationEventHandler OnActionPointOrientationBaseUpdated;
+    public event AREditorEventArgs.StringEventHandler OnActionPointOrientationRemoved;
     /// <summary>
     /// Invoked when action item added. Contains info about the logic item.
     /// </summary>
@@ -89,7 +88,7 @@ public class WebSocketManagerH : Singleton<WebSocketManagerH>
     /// ARServer domain or IP address
     /// </summary>
     private string serverDomain;
-    
+
     /// <summary>
     /// Create websocket URI from domain name and port
     /// </summary>
@@ -106,7 +105,7 @@ public class WebSocketManagerH : Singleton<WebSocketManagerH>
     /// <param name="closeCode"></param>
     private void OnClose(WebSocketCloseCode closeCode) {
         Debug.Log("Connection closed!");
-    //    CleanupAfterDisconnect();
+        //    CleanupAfterDisconnect();
         OnDisconnectEvent?.Invoke(this, EventArgs.Empty);
     }
 
@@ -123,7 +122,7 @@ public class WebSocketManagerH : Singleton<WebSocketManagerH>
     private void OnConnected() {
         Debug.Log("On connected");
         OnConnectedEvent?.Invoke(this, EventArgs.Empty);
-    }   
+    }
 
 
     /// <summary>
@@ -138,7 +137,7 @@ public class WebSocketManagerH : Singleton<WebSocketManagerH>
             //already closed probably..
         }
     }
-    
+
     /// <summary>
     /// Tries to connect to server
     /// </summary>
@@ -146,7 +145,7 @@ public class WebSocketManagerH : Singleton<WebSocketManagerH>
     /// <param name="port">Server port</param>
     public async void ConnectToServer(string domain, int port) {
         Debug.Log("connectToServer called");
-     
+
         GameManagerH.Instance.ConnectionStatus = GameManagerH.ConnectionStatusEnum.Connecting;
         try {
             APIDomainWS = GetWSURI(domain, port);
@@ -161,21 +160,41 @@ public class WebSocketManagerH : Singleton<WebSocketManagerH>
             await websocket.Connect();
         } catch (UriFormatException ex) {
             Debug.LogError(ex);
-           
-       //     Notifications.Instance.ShowNotification("Failed to parse domain", ex.Message);
+
+            //     Notifications.Instance.ShowNotification("Failed to parse domain", ex.Message);
             GameManagerH.Instance.ConnectionStatus = GameManagerH.ConnectionStatusEnum.Disconnected;
             GameManagerH.Instance.HideLoadingScreen(true);
         }
     }
     // Update is called once per frame
-    void Update()
-    {
-         if (websocket != null && websocket.State == WebSocketState.Open)
-                websocket.DispatchMessageQueue();
+    void Update() {
+        if (websocket != null && websocket.State == WebSocketState.Open)
+            websocket.DispatchMessageQueue();
     }
 
 
-    
+    /// <summary>
+    /// Returns the URI of asset service
+    /// </summary>
+    /// <returns></returns>
+    public string GetAssetServiceURI() {
+        string uri = PlayerPrefsHelper.LoadString("AssetServiceURI", "");
+
+        // TODO this could (should?) work without connection to the server
+        Debug.Assert(!string.IsNullOrEmpty(GetServerDomain()), "GetAssetServiceURI was probably used without connection to the server.");
+
+        if (string.IsNullOrEmpty(uri))
+            return "http://" + GetServerDomain() + ":6790";
+        else {
+            return uri.Trim('/');
+        }
+    }
+
+    public string GetAssetFileURI(string file_id) {
+        return $"{GetAssetServiceURI()}/assets/{file_id}/data";
+    }
+
+
     /// <summary>
     /// Method for parsing recieved message and invoke proper callback
     /// </summary>
@@ -188,7 +207,6 @@ public class WebSocketManagerH : Singleton<WebSocketManagerH>
             @event = "",
             request = ""
         };
-
         var dispatch = JsonConvert.DeserializeAnonymousType(data, dispatchType);
 
         if (dispatch?.response == null && dispatch?.request == null && dispatch?.@event == null)
@@ -220,7 +238,7 @@ public class WebSocketManagerH : Singleton<WebSocketManagerH>
                 case "ChangedObjectTypes":
                     HandleChangedObjectTypesEvent(data);
                     break;
-                 case "ActionPointChanged":
+                case "ActionPointChanged":
                     HandleActionPointChanged(data);
                     break;
                 case "ActionChanged":
@@ -241,7 +259,7 @@ public class WebSocketManagerH : Singleton<WebSocketManagerH>
                 case "OpenScene":
                     await HandleOpenScene(data);
                     break;
-                 case "OpenProject":
+                case "OpenProject":
                     HandleOpenProject(data);
                     break;
                 case "LogicItemChanged":
@@ -253,19 +271,19 @@ public class WebSocketManagerH : Singleton<WebSocketManagerH>
                 case "OrientationChanged":
                     HandleOrientationChanged(data);
                     break;
-              /*  case "PackageState":
-                    HandlePackageState(data);
-                    break;
-                case "PackageInfo":
-                    HandlePackageInfo(data);
-                    break;*/
-             
+                    /*  case "PackageState":
+                          HandlePackageState(data);
+                          break;
+                      case "PackageInfo":
+                          HandlePackageInfo(data);
+                          break;*/
+
             }
         }
- 
+
     }
 
-    
+
     /// <summary>
     /// Register or unregister to/from subsription of robots joints or end effectors pose.
     /// </summary>
@@ -295,7 +313,7 @@ public class WebSocketManagerH : Singleton<WebSocketManagerH>
         if (key < 0) {
             key = Interlocked.Increment(ref requestID);
         }
-        
+
 
         if (storeResult) {
             responses[key] = null;
@@ -317,7 +335,7 @@ public class WebSocketManagerH : Singleton<WebSocketManagerH>
             }
         } catch (WebSocketException ex) {
             Debug.Log("socketexception in sendwebsocketmessage: " + ex.Message);
-         
+
 
         }
     }
@@ -346,7 +364,7 @@ public class WebSocketManagerH : Singleton<WebSocketManagerH>
         GameManagerH.Instance.ProjectOpened(openProjectEvent.Data.Scene, openProjectEvent.Data.Project);
     }
 
-    
+
     private void HandleShowMainScreen(string data) {
         IO.Swagger.Model.ShowMainScreen showMainScreenEvent = JsonConvert.DeserializeObject<IO.Swagger.Model.ShowMainScreen>(data);
         OnShowMainScreen?.Invoke(this, new ShowMainScreenEventArgs(showMainScreenEvent.Data));
@@ -387,7 +405,7 @@ public class WebSocketManagerH : Singleton<WebSocketManagerH>
         SendDataToServer(request.ToJson(), r_id, true);
         IO.Swagger.Model.GetEndEffectorsResponse response = await WaitForResult<IO.Swagger.Model.GetEndEffectorsResponse>(r_id);
         if (response == null || !response.Result) {
-             HNotificationManager.Instance.ShowNotification( "Failed to get robot end effectors /n");
+            HNotificationManager.Instance.ShowNotification("Failed to get robot end effectors /n");
             throw new RequestFailedException(response == null ? new List<string>() { "Failed to get robot end effectors" } : response.Messages);
         } else {
             return response.Data;
@@ -417,7 +435,7 @@ public class WebSocketManagerH : Singleton<WebSocketManagerH>
         SendDataToServer(request.ToJson(), id, false);
     }
 
-    
+
     /// <summary>
     /// Asks server to close opened scene.
     /// Throws RequestFailedException when request failed
@@ -451,7 +469,7 @@ public class WebSocketManagerH : Singleton<WebSocketManagerH>
 
         if (response == null || !response.Result)
             throw new RequestFailedException(response == null ? "Request timed out" : response.Messages[0]);
-        }
+    }
     public async Task<List<string>> GetRobotArms(string robotId) {
         int r_id = Interlocked.Increment(ref requestID);
         GetRobotArmsRequestArgs args = new GetRobotArmsRequestArgs(robotId: robotId);
@@ -527,7 +545,7 @@ public class WebSocketManagerH : Singleton<WebSocketManagerH>
         int r_id = Interlocked.Increment(ref requestID);
         IO.Swagger.Model.UpdateObjectModelRequestArgs args = new UpdateObjectModelRequestArgs(objectModel: objectModel, objectTypeId: id);
 
-        IO.Swagger.Model.UpdateObjectModelRequest request = new IO.Swagger.Model.UpdateObjectModelRequest (r_id, "UpdateObjectModel", args: args, dryRun: dryRun);
+        IO.Swagger.Model.UpdateObjectModelRequest request = new IO.Swagger.Model.UpdateObjectModelRequest(r_id, "UpdateObjectModel", args: args, dryRun: dryRun);
         SendDataToServer(request.ToJson(), r_id, true);
         IO.Swagger.Model.UpdateObjectModelResponse response = await WaitForResult<IO.Swagger.Model.UpdateObjectModelResponse>(r_id);
         if (response == null || !response.Result) {
@@ -602,7 +620,7 @@ public class WebSocketManagerH : Singleton<WebSocketManagerH>
         return serverDomain;
     }
 
-    
+
     /// <summary>
     /// Gets available values for selected parameter.
     /// </summary>
@@ -672,12 +690,12 @@ public class WebSocketManagerH : Singleton<WebSocketManagerH>
         SendDataToServer(request.ToJson(), r_id, false);
     }
 
-     /// <summary>
+    /// <summary>
     /// Asks server to open scene
     /// </summary>
     /// <param name="scene_id">Id of scene to be openned</param>
     /// <returns></returns>
-    public  async Task<IO.Swagger.Model.Project> GetProject(string project_id) {
+    public async Task<IO.Swagger.Model.Project> GetProject(string project_id) {
         int r_id = Interlocked.Increment(ref requestID);
         IO.Swagger.Model.IdArgs args = new IO.Swagger.Model.IdArgs(id: project_id);
         IO.Swagger.Model.GetProjectRequest request = new IO.Swagger.Model.GetProjectRequest(id: r_id, request: "GetProject", args: args);
@@ -689,12 +707,12 @@ public class WebSocketManagerH : Singleton<WebSocketManagerH>
         return response.Data;
     }
 
-      /// <summary>
+    /// <summary>
     /// Asks server to open scene
     /// </summary>
     /// <param name="scene_id">Id of scene to be openned</param>
     /// <returns></returns>
-    public  async Task<IO.Swagger.Model.Scene> GetScene(string scene_id) {
+    public async Task<IO.Swagger.Model.Scene> GetScene(string scene_id) {
         int r_id = Interlocked.Increment(ref requestID);
         IO.Swagger.Model.IdArgs args = new IO.Swagger.Model.IdArgs(id: scene_id);
         IO.Swagger.Model.GetSceneRequest request = new IO.Swagger.Model.GetSceneRequest(id: r_id, request: "GetScene", args: args);
@@ -706,7 +724,7 @@ public class WebSocketManagerH : Singleton<WebSocketManagerH>
         return response.Data;
     }
 
-        // TODO: add timeout!
+    // TODO: add timeout!
     /// <summary>
     /// WWaits until response with selected ID is recieved.
     /// </summary>
@@ -727,7 +745,7 @@ public class WebSocketManagerH : Singleton<WebSocketManagerH>
         });
 
     }
-    
+
     /// <summary>
     /// Gets metadata about robots
     /// </summary>
@@ -738,7 +756,7 @@ public class WebSocketManagerH : Singleton<WebSocketManagerH>
         SendDataToServer(request.ToJson(), r_id, true);
         IO.Swagger.Model.GetRobotMetaResponse response = await WaitForResult<IO.Swagger.Model.GetRobotMetaResponse>(r_id);
         if (response == null || !response.Result) {
-               HNotificationManager.Instance.ShowNotification("Failed to get robot meta");
+            HNotificationManager.Instance.ShowNotification("Failed to get robot meta");
             throw new RequestFailedException(response == null ? new List<string>() { "Failed to get robot meta" } : response.Messages);
         } else {
             return response.Data;
@@ -824,7 +842,7 @@ public class WebSocketManagerH : Singleton<WebSocketManagerH>
         }
     }
 
-    
+
     /// <summary>
     /// Asks server to open project. Throws RequestFailedException when request failed
     /// </summary>
@@ -953,7 +971,7 @@ public class WebSocketManagerH : Singleton<WebSocketManagerH>
         }
     }
 
-    
+
     /// <summary>
     /// Asks server to rename aciton point.
     /// </summary>
@@ -990,7 +1008,7 @@ public class WebSocketManagerH : Singleton<WebSocketManagerH>
             throw new RequestFailedException(response == null ? "Request timed out" : response.Messages[0]);
     }
 
-    
+
     /// <summary>
     /// Asks server to rename action point orientation
     /// Throws RequestFailedException when request failed
@@ -1068,289 +1086,304 @@ public class WebSocketManagerH : Singleton<WebSocketManagerH>
         }
     }
 
-        /// <summary>
-        /// Decodes changes of action points
-        /// </summary>
-        /// <param name="data">Message from server</param>
-        private void HandleActionPointChanged(string data) {
-            HProjectManager.Instance.ProjectChanged = true;
-            IO.Swagger.Model.ActionPointChanged actionPointChangedEvent = JsonConvert.DeserializeObject<IO.Swagger.Model.ActionPointChanged>(data);
-            var actionPointChangedFields = new {
-                data = new IO.Swagger.Model.ActionPoint(id: "", name: "string", parent: "", position: new Position(),
-                    actions: new List<IO.Swagger.Model.Action>(), orientations: new List<NamedOrientation>(),
-                    robotJoints: new List<ProjectRobotJoints>())
-            };
+    /// <summary>
+    /// Decodes changes of action points
+    /// </summary>
+    /// <param name="data">Message from server</param>
+    private void HandleActionPointChanged(string data) {
+        HProjectManager.Instance.ProjectChanged = true;
+        IO.Swagger.Model.ActionPointChanged actionPointChangedEvent = JsonConvert.DeserializeObject<IO.Swagger.Model.ActionPointChanged>(data);
+        var actionPointChangedFields = new {
+            data = new IO.Swagger.Model.ActionPoint(id: "", name: "string", parent: "", position: new Position(),
+                actions: new List<IO.Swagger.Model.Action>(), orientations: new List<NamedOrientation>(),
+                robotJoints: new List<ProjectRobotJoints>())
+        };
 
-            switch (actionPointChangedEvent.ChangeType) {
-                case IO.Swagger.Model.ActionPointChanged.ChangeTypeEnum.Add:
-                    var actionPoint = JsonConvert.DeserializeAnonymousType(data, actionPointChangedFields);
-                    OnActionPointAdded?.Invoke(this, new ProjectActionPointEventArgs(actionPoint.data));
-                    break;
-                case IO.Swagger.Model.ActionPointChanged.ChangeTypeEnum.Remove:
-                    OnActionPointRemoved?.Invoke(this, new StringEventArgs(actionPointChangedEvent.Data.Id));
-                    break;
-                case IO.Swagger.Model.ActionPointChanged.ChangeTypeEnum.Update:
-                    var actionPointUpdate = JsonConvert.DeserializeAnonymousType(data, actionPointChangedFields);
-                    OnActionPointUpdated?.Invoke(this, new ProjectActionPointEventArgs(actionPointUpdate.data));
-                    break;
-                case IO.Swagger.Model.ActionPointChanged.ChangeTypeEnum.Updatebase:
-                    OnActionPointBaseUpdated?.Invoke(this, new BareActionPointEventArgs(actionPointChangedEvent.Data));
-                    break;
-                default:
-                    throw new NotImplementedException();
-            }
+        switch (actionPointChangedEvent.ChangeType) {
+            case IO.Swagger.Model.ActionPointChanged.ChangeTypeEnum.Add:
+                var actionPoint = JsonConvert.DeserializeAnonymousType(data, actionPointChangedFields);
+                OnActionPointAdded?.Invoke(this, new ProjectActionPointEventArgs(actionPoint.data));
+                break;
+            case IO.Swagger.Model.ActionPointChanged.ChangeTypeEnum.Remove:
+                OnActionPointRemoved?.Invoke(this, new StringEventArgs(actionPointChangedEvent.Data.Id));
+                break;
+            case IO.Swagger.Model.ActionPointChanged.ChangeTypeEnum.Update:
+                var actionPointUpdate = JsonConvert.DeserializeAnonymousType(data, actionPointChangedFields);
+                OnActionPointUpdated?.Invoke(this, new ProjectActionPointEventArgs(actionPointUpdate.data));
+                break;
+            case IO.Swagger.Model.ActionPointChanged.ChangeTypeEnum.Updatebase:
+                OnActionPointBaseUpdated?.Invoke(this, new BareActionPointEventArgs(actionPointChangedEvent.Data));
+                break;
+            default:
+                throw new NotImplementedException();
         }
+    }
 
-        public async Task StartScene(bool dryRun) {
-            int r_id = Interlocked.Increment(ref requestID);
-            IO.Swagger.Model.StartSceneRequest request = new IO.Swagger.Model.StartSceneRequest(r_id, "StartScene", dryRun: dryRun);
-            SendDataToServer(request.ToJson(), r_id, true);
-            IO.Swagger.Model.StartSceneResponse response = await WaitForResult<IO.Swagger.Model.StartSceneResponse>(r_id);
-            if (response == null || !response.Result) {
-                throw new RequestFailedException(response == null ? new List<string>() { "Failed to start scene" } : response.Messages);
-            }
+    public async Task StartScene(bool dryRun) {
+        int r_id = Interlocked.Increment(ref requestID);
+        IO.Swagger.Model.StartSceneRequest request = new IO.Swagger.Model.StartSceneRequest(r_id, "StartScene", dryRun: dryRun);
+        SendDataToServer(request.ToJson(), r_id, true);
+        IO.Swagger.Model.StartSceneResponse response = await WaitForResult<IO.Swagger.Model.StartSceneResponse>(r_id);
+        if (response == null || !response.Result) {
+            throw new RequestFailedException(response == null ? new List<string>() { "Failed to start scene" } : response.Messages);
         }
+    }
 
-        /// <summary>
-        /// Handles message with info about robots end effector
-        /// </summary>
-        /// <param name="data">Message from server</param>
-        private void HandleRobotEef(string data) {
-            IO.Swagger.Model.RobotEef robotEef = JsonConvert.DeserializeObject<IO.Swagger.Model.RobotEef>(data);
-            OnRobotEefUpdated?.Invoke(this, new RobotEefUpdatedEventArgs(robotEef.Data));
+    /// <summary>
+    /// Handles message with info about robots end effector
+    /// </summary>
+    /// <param name="data">Message from server</param>
+    private void HandleRobotEef(string data) {
+        IO.Swagger.Model.RobotEef robotEef = JsonConvert.DeserializeObject<IO.Swagger.Model.RobotEef>(data);
+        OnRobotEefUpdated?.Invoke(this, new RobotEefUpdatedEventArgs(robotEef.Data));
+    }
+
+    /// <summary>
+    /// Handles message with infou about robots joints
+    /// </summary>
+    /// <param name="data">Message from server</param>
+    private void HandleRobotJoints(string data) {
+        IO.Swagger.Model.RobotJoints robotJoints = JsonConvert.DeserializeObject<IO.Swagger.Model.RobotJoints>(data);
+        OnRobotJointsUpdated?.Invoke(this, new RobotJointsUpdatedEventArgs(robotJoints.Data));
+    }
+
+    /// <summary>
+    /// Asks server to save currently openned scene
+    /// </summary>
+    /// <returns>Response form server</returns>
+    public async Task<IO.Swagger.Model.SaveSceneResponse> SaveScene(bool dryRun = false) {
+        int id = Interlocked.Increment(ref requestID);
+        SendDataToServer(new IO.Swagger.Model.SaveSceneRequest(id: id, request: "SaveScene", dryRun: dryRun).ToJson(), id, true);
+        return await WaitForResult<IO.Swagger.Model.SaveSceneResponse>(id);
+    }
+
+    /// <summary>
+    /// Asks server to save currently openned project
+    /// </summary>
+    /// <returns>Response form server</returns>
+    public async Task<IO.Swagger.Model.SaveProjectResponse> SaveProject(bool dryRun = false) {
+        int id = Interlocked.Increment(ref requestID);
+        SendDataToServer(new IO.Swagger.Model.SaveProjectRequest(id, "SaveProject", dryRun).ToJson(), id, false);
+        return await WaitForResult<IO.Swagger.Model.SaveProjectResponse>(id);
+
+    }
+
+    /// <summary>
+    /// Asks server to add new action point.
+    /// Throws RequestFailedException when request failed
+    /// </summary>
+    /// <param name="name">Human readable name of action point</param>
+    /// <param name="parent">UUID of action point parent. Null if action point should be global.</param>
+    /// <param name="position">Offset from parent (or scene origin for global AP)</param>
+    /// <returns></returns>
+    public async Task AddActionPoint(string name, string parent, IO.Swagger.Model.Position position) {
+        int r_id = Interlocked.Increment(ref requestID);
+        IO.Swagger.Model.AddActionPointRequestArgs args = new IO.Swagger.Model.AddActionPointRequestArgs(parent: parent, position: position, name: name);
+        IO.Swagger.Model.AddActionPointRequest request = new IO.Swagger.Model.AddActionPointRequest(r_id, "AddActionPoint", args);
+        SendDataToServer(request.ToJson(), r_id, true);
+        IO.Swagger.Model.AddActionPointResponse response = await WaitForResult<IO.Swagger.Model.AddActionPointResponse>(r_id);
+
+        if (response == null || !response.Result)
+            throw new RequestFailedException(response == null ? "Request timed out" : response.Messages[0]);
+    }
+
+
+    /// <summary>
+    /// Asks server to add new action.
+    /// Throws RequestFailedException when request failed
+    /// </summary>
+    /// <param name="actionPointId">UUID of action point to which action should be added</param>
+    /// <param name="actionParameters">Parameters of action</param>
+    /// <param name="type">Type of action</param>
+    /// <param name="name">Human readable name of action</param>
+    /// <param name="flows">List of logical flows from action</param>
+    /// <returns></returns>
+    public async Task AddAction(string actionPointId, List<IO.Swagger.Model.ActionParameter> actionParameters, string type, string name, List<Flow> flows) {
+        int r_id = Interlocked.Increment(ref requestID);
+        IO.Swagger.Model.AddActionRequestArgs args = new IO.Swagger.Model.AddActionRequestArgs(actionPointId: actionPointId, parameters: actionParameters, type: type, name: name, flows: flows);
+        IO.Swagger.Model.AddActionRequest request = new IO.Swagger.Model.AddActionRequest(r_id, "AddAction", args);
+        SendDataToServer(request.ToJson(), r_id, true);
+        IO.Swagger.Model.AddActionResponse response = await WaitForResult<IO.Swagger.Model.AddActionResponse>(r_id);
+
+        if (response == null || !response.Result)
+            throw new RequestFailedException(response == null ? "Request timed out" : response.Messages[0]);
+    }
+
+    /// <summary>
+    /// Asks server to update logic item (e.g. change connection between actions).
+    /// Throws RequestFailedException when request failed
+    /// </summary>
+    /// <param name="logicItemId">UUID of logic item</param>
+    /// <param name="startActionId">UUID of first action (from)</param>
+    /// <param name="endActionId">UUID of second action (to)</param>
+    /// <returns></returns>
+    public async Task UpdateLogicItem(string logicItemId, string startActionId, string endActionId) {
+        int r_id = Interlocked.Increment(ref requestID);
+        IO.Swagger.Model.UpdateLogicItemRequestArgs args = new IO.Swagger.Model.UpdateLogicItemRequestArgs(start: startActionId, end: endActionId, logicItemId: logicItemId);
+        IO.Swagger.Model.UpdateLogicItemRequest request = new IO.Swagger.Model.UpdateLogicItemRequest(r_id, "UpdateLogicItem", args);
+        SendDataToServer(request.ToJson(), r_id, true);
+        IO.Swagger.Model.UpdateLogicItemResponse response = await WaitForResult<IO.Swagger.Model.UpdateLogicItemResponse>(r_id);
+
+        if (response == null || !response.Result)
+            throw new RequestFailedException(response == null ? "Request timed out" : response.Messages[0]);
+    }
+
+    /// <summary>
+    /// Asks server to remove logic item (destroy connection of actions).
+    /// Throws RequestFailedException when request failed
+    /// </summary>
+    /// <param name="logicItemId">UUID of connection.</param>
+    /// <returns></returns>
+    public async Task RemoveLogicItem(string logicItemId) {
+        int r_id = Interlocked.Increment(ref requestID);
+        IO.Swagger.Model.RemoveLogicItemRequestArgs args = new IO.Swagger.Model.RemoveLogicItemRequestArgs(logicItemId: logicItemId);
+        IO.Swagger.Model.RemoveLogicItemRequest request = new IO.Swagger.Model.RemoveLogicItemRequest(r_id, "RemoveLogicItem", args);
+        SendDataToServer(request.ToJson(), r_id, true);
+        IO.Swagger.Model.RemoveLogicItemResponse response = await WaitForResult<IO.Swagger.Model.RemoveLogicItemResponse>(r_id);
+
+        if (response == null || !response.Result)
+            throw new RequestFailedException(response == null ? "Request timed out" : response.Messages[0]);
+    }
+
+
+    /// <summary>
+    /// Decodes changes in program logic
+    /// </summary>
+    /// <param name="data">Message from server</param>
+    private void HandleLogicItemChanged(string data) {
+        LogicItemChanged logicItemChanged = JsonConvert.DeserializeObject<LogicItemChanged>(data);
+        HProjectManager.Instance.ProjectChanged = true;
+        switch (logicItemChanged.ChangeType) {
+            case LogicItemChanged.ChangeTypeEnum.Add:
+                OnLogicItemAdded?.Invoke(this, new LogicItemChangedEventArgs(logicItemChanged.Data));
+                break;
+            case LogicItemChanged.ChangeTypeEnum.Remove:
+                OnLogicItemRemoved?.Invoke(this, new StringEventArgs(logicItemChanged.Data.Id));
+                break;
+            case LogicItemChanged.ChangeTypeEnum.Update:
+                OnLogicItemUpdated?.Invoke(this, new LogicItemChangedEventArgs(logicItemChanged.Data));
+                break;
+            default:
+                throw new NotImplementedException();
         }
+    }
 
-        /// <summary>
-        /// Handles message with infou about robots joints
-        /// </summary>
-        /// <param name="data">Message from server</param>
-        private void HandleRobotJoints(string data) {
-            IO.Swagger.Model.RobotJoints robotJoints = JsonConvert.DeserializeObject<IO.Swagger.Model.RobotJoints>(data);
-            OnRobotJointsUpdated?.Invoke(this, new RobotJointsUpdatedEventArgs(robotJoints.Data));
+    /// <summary>
+    /// Asks server to create new orientation for action point.
+    /// Throws RequestFailedException when request failed
+    /// </summary>
+    /// <param name="id">UUID of action point</param>
+    /// <param name="orientation">Orientation</param>
+    /// <param name="name">Human readable name of orientation</param>
+    /// <returns></returns>
+    public async Task AddActionPointOrientation(string id, IO.Swagger.Model.Orientation orientation, string name) {
+        int r_id = Interlocked.Increment(ref requestID);
+        IO.Swagger.Model.AddActionPointOrientationRequestArgs args = new IO.Swagger.Model.AddActionPointOrientationRequestArgs(actionPointId: id, orientation: orientation, name: name);
+        IO.Swagger.Model.AddActionPointOrientationRequest request = new IO.Swagger.Model.AddActionPointOrientationRequest(r_id, "AddActionPointOrientation", args);
+        SendDataToServer(request.ToJson(), r_id, true);
+        IO.Swagger.Model.AddActionPointOrientationResponse response = await WaitForResult<IO.Swagger.Model.AddActionPointOrientationResponse>(r_id);
+
+        if (response == null || !response.Result)
+            throw new RequestFailedException(response == null ? "Request timed out" : response.Messages[0]);
+    }
+
+    /// <summary>
+    /// Decodes changes on orientations
+    /// </summary>
+    /// <param name="data">Message from server</param>
+    private void HandleOrientationChanged(string data) {
+        HProjectManager.Instance.ProjectChanged = true;
+        IO.Swagger.Model.OrientationChanged orientationChanged = JsonConvert.DeserializeObject<IO.Swagger.Model.OrientationChanged>(data);
+        switch (orientationChanged.ChangeType) {
+            case IO.Swagger.Model.OrientationChanged.ChangeTypeEnum.Add:
+                OnActionPointOrientationAdded?.Invoke(this, new ActionPointOrientationEventArgs(orientationChanged.Data, orientationChanged.ParentId));
+                break;
+            case IO.Swagger.Model.OrientationChanged.ChangeTypeEnum.Remove:
+                OnActionPointOrientationRemoved?.Invoke(this, new StringEventArgs(orientationChanged.Data.Id));
+                break;
+            case IO.Swagger.Model.OrientationChanged.ChangeTypeEnum.Update:
+                OnActionPointOrientationUpdated?.Invoke(this, new ActionPointOrientationEventArgs(orientationChanged.Data, null));
+                break;
+            case IO.Swagger.Model.OrientationChanged.ChangeTypeEnum.Updatebase:
+                OnActionPointOrientationBaseUpdated?.Invoke(this, new ActionPointOrientationEventArgs(orientationChanged.Data, null));
+
+                break;
+            default:
+                throw new NotImplementedException();
         }
+    }
 
-        /// <summary>
-        /// Asks server to save currently openned scene
-        /// </summary>
-        /// <returns>Response form server</returns>
-        public async Task<IO.Swagger.Model.SaveSceneResponse> SaveScene(bool dryRun = false) {
-            int id = Interlocked.Increment(ref requestID);
-            SendDataToServer(new IO.Swagger.Model.SaveSceneRequest(id: id, request: "SaveScene", dryRun: dryRun).ToJson(), id, true);
-            return await WaitForResult<IO.Swagger.Model.SaveSceneResponse>(id);
-        }
+    /// <summary>
+    /// Asks server to create and run temporary package. This package is not saved on execution unit and it is
+    /// removed immideately after package execution. Throws RequestFailedException when request failed
+    /// </summary>
+    /// <returns></returns>
+    public async Task TemporaryPackage(List<string> apBreakpoints, bool pauseOnFirstAction = false) {
+        int r_id = Interlocked.Increment(ref requestID);
+        IO.Swagger.Model.TemporaryPackageRequestArgs args = new TemporaryPackageRequestArgs(breakpoints: apBreakpoints, startPaused: pauseOnFirstAction);
+        IO.Swagger.Model.TemporaryPackageRequest request = new IO.Swagger.Model.TemporaryPackageRequest(id: r_id, request: "TemporaryPackage", args: args);
+        SendDataToServer(request.ToJson(), r_id, true);
+        IO.Swagger.Model.TemporaryPackageResponse response = await WaitForResult<IO.Swagger.Model.TemporaryPackageResponse>(r_id, 30000);
+        if (response == null || !response.Result)
+            throw new RequestFailedException(response == null ? "Request timed out" : response.Messages[0]);
+    }
 
-        /// <summary>
-        /// Asks server to save currently openned project
-        /// </summary>
-        /// <returns>Response form server</returns>
-        public async Task<IO.Swagger.Model.SaveProjectResponse> SaveProject(bool dryRun = false) {
-            int id = Interlocked.Increment(ref requestID);
-            SendDataToServer(new IO.Swagger.Model.SaveProjectRequest(id, "SaveProject", dryRun).ToJson(), id, false);
-            return await WaitForResult<IO.Swagger.Model.SaveProjectResponse>(id);
+    /// <summary>
+    /// Asks server to create project.
+    /// Throws RequestFailedException when request failed
+    /// </summary>
+    /// <param name="name">Human readable name of project</param>
+    /// <param name="sceneId">UUID of scene</param>
+    /// <param name="description">Description of project</param>
+    /// <param name="hasLogic">Flags indicating if project specifies logical flow of thr program.</param>
+    /// <param name="dryRun">If true, validates all parameters, but will not execute requested action itself.</param>
+    /// <returns></returns>
+    public async Task CreateProject(string name, string sceneId, string description, bool hasLogic, bool dryRun) {
+        int r_id = Interlocked.Increment(ref requestID);
+        IO.Swagger.Model.NewProjectRequestArgs args = new IO.Swagger.Model.NewProjectRequestArgs(name: name, sceneId: sceneId, description: description, hasLogic: hasLogic);
+        IO.Swagger.Model.NewProjectRequest request = new IO.Swagger.Model.NewProjectRequest(r_id, "NewProject", args, dryRun: dryRun);
+        SendDataToServer(request.ToJson(), r_id, true);
+        IO.Swagger.Model.NewProjectResponse response = await WaitForResult<IO.Swagger.Model.NewProjectResponse>(r_id);
 
-        }
+        if (response == null || !response.Result)
+            throw new RequestFailedException(response == null ? "Request timed out" : response.Messages[0]);
+    }
 
-        /// <summary>
-        /// Asks server to add new action point.
-        /// Throws RequestFailedException when request failed
-        /// </summary>
-        /// <param name="name">Human readable name of action point</param>
-        /// <param name="parent">UUID of action point parent. Null if action point should be global.</param>
-        /// <param name="position">Offset from parent (or scene origin for global AP)</param>
-        /// <returns></returns>
-        public async Task AddActionPoint(string name, string parent, IO.Swagger.Model.Position position) {
-            int r_id = Interlocked.Increment(ref requestID);
-            IO.Swagger.Model.AddActionPointRequestArgs args = new IO.Swagger.Model.AddActionPointRequestArgs(parent: parent, position: position, name: name);
-            IO.Swagger.Model.AddActionPointRequest request = new IO.Swagger.Model.AddActionPointRequest(r_id, "AddActionPoint", args);
-            SendDataToServer(request.ToJson(), r_id, true);
-            IO.Swagger.Model.AddActionPointResponse response = await WaitForResult<IO.Swagger.Model.AddActionPointResponse>(r_id);
+    /*      /// <summary>
+     /// Decodes package state
+     /// </summary>
+     /// <param name="obj"></param>
+     private void HandlePackageState(string obj) {
+         IO.Swagger.Model.PackageState projectState = JsonConvert.DeserializeObject<IO.Swagger.Model.PackageState>(obj);
+         GameManagerH.Instance.PackageStateUpdated(projectState.Data);
+     }
 
-            if (response == null || !response.Result)
-                throw new RequestFailedException(response == null ? "Request timed out" : response.Messages[0]);
-        }
-
-
-        /// <summary>
-        /// Asks server to add new action.
-        /// Throws RequestFailedException when request failed
-        /// </summary>
-        /// <param name="actionPointId">UUID of action point to which action should be added</param>
-        /// <param name="actionParameters">Parameters of action</param>
-        /// <param name="type">Type of action</param>
-        /// <param name="name">Human readable name of action</param>
-        /// <param name="flows">List of logical flows from action</param>
-        /// <returns></returns>
-        public async Task AddAction(string actionPointId, List<IO.Swagger.Model.ActionParameter> actionParameters, string type, string name, List<Flow> flows) {
-            int r_id = Interlocked.Increment(ref requestID);
-            IO.Swagger.Model.AddActionRequestArgs args = new IO.Swagger.Model.AddActionRequestArgs(actionPointId: actionPointId, parameters: actionParameters, type: type, name: name, flows: flows);
-            IO.Swagger.Model.AddActionRequest request = new IO.Swagger.Model.AddActionRequest(r_id, "AddAction", args);
-            SendDataToServer(request.ToJson(), r_id, true);
-            IO.Swagger.Model.AddActionResponse response = await WaitForResult<IO.Swagger.Model.AddActionResponse>(r_id);
-
-            if (response == null || !response.Result)
-                throw new RequestFailedException(response == null ? "Request timed out" : response.Messages[0]);
-        }
-
-        /// <summary>
-        /// Asks server to update logic item (e.g. change connection between actions).
-        /// Throws RequestFailedException when request failed
-        /// </summary>
-        /// <param name="logicItemId">UUID of logic item</param>
-        /// <param name="startActionId">UUID of first action (from)</param>
-        /// <param name="endActionId">UUID of second action (to)</param>
-        /// <returns></returns>
-        public async Task UpdateLogicItem(string logicItemId, string startActionId, string endActionId) {
-            int r_id = Interlocked.Increment(ref requestID);
-            IO.Swagger.Model.UpdateLogicItemRequestArgs args = new IO.Swagger.Model.UpdateLogicItemRequestArgs(start: startActionId, end: endActionId, logicItemId: logicItemId);
-            IO.Swagger.Model.UpdateLogicItemRequest request = new IO.Swagger.Model.UpdateLogicItemRequest(r_id, "UpdateLogicItem", args);
-            SendDataToServer(request.ToJson(), r_id, true);
-            IO.Swagger.Model.UpdateLogicItemResponse response = await WaitForResult<IO.Swagger.Model.UpdateLogicItemResponse>(r_id);
-
-            if (response == null || !response.Result)
-                throw new RequestFailedException(response == null ? "Request timed out" : response.Messages[0]);
-        }
-
-        /// <summary>
-        /// Asks server to remove logic item (destroy connection of actions).
-        /// Throws RequestFailedException when request failed
-        /// </summary>
-        /// <param name="logicItemId">UUID of connection.</param>
-        /// <returns></returns>
-        public async Task RemoveLogicItem(string logicItemId) {
-            int r_id = Interlocked.Increment(ref requestID);
-            IO.Swagger.Model.RemoveLogicItemRequestArgs args = new IO.Swagger.Model.RemoveLogicItemRequestArgs(logicItemId: logicItemId);
-            IO.Swagger.Model.RemoveLogicItemRequest request = new IO.Swagger.Model.RemoveLogicItemRequest(r_id, "RemoveLogicItem", args);
-            SendDataToServer(request.ToJson(), r_id, true);
-            IO.Swagger.Model.RemoveLogicItemResponse response = await WaitForResult<IO.Swagger.Model.RemoveLogicItemResponse>(r_id);
-            
-            if (response == null || !response.Result)
-                throw new RequestFailedException(response == null ? "Request timed out" : response.Messages[0]);
-        }
-
-        
-        /// <summary>
-        /// Decodes changes in program logic
-        /// </summary>
-        /// <param name="data">Message from server</param>
-        private void HandleLogicItemChanged(string data) {
-            LogicItemChanged logicItemChanged = JsonConvert.DeserializeObject<LogicItemChanged>(data);
-            HProjectManager.Instance.ProjectChanged = true;
-            switch (logicItemChanged.ChangeType) {
-                case LogicItemChanged.ChangeTypeEnum.Add:
-                    OnLogicItemAdded?.Invoke(this, new LogicItemChangedEventArgs(logicItemChanged.Data));
-                    break;
-                case LogicItemChanged.ChangeTypeEnum.Remove:
-                    OnLogicItemRemoved?.Invoke(this, new StringEventArgs(logicItemChanged.Data.Id));
-                    break;
-                case LogicItemChanged.ChangeTypeEnum.Update:
-                    OnLogicItemUpdated?.Invoke(this, new LogicItemChangedEventArgs(logicItemChanged.Data));
-                    break;
-                default:
-                    throw new NotImplementedException();
-            }
-        }
-
-        /// <summary>
-        /// Asks server to create new orientation for action point.
-        /// Throws RequestFailedException when request failed
-        /// </summary>
-        /// <param name="id">UUID of action point</param>
-        /// <param name="orientation">Orientation</param>
-        /// <param name="name">Human readable name of orientation</param>
-        /// <returns></returns>
-        public async Task AddActionPointOrientation(string id, IO.Swagger.Model.Orientation orientation, string name) {
-            int r_id = Interlocked.Increment(ref requestID);
-            IO.Swagger.Model.AddActionPointOrientationRequestArgs args = new IO.Swagger.Model.AddActionPointOrientationRequestArgs(actionPointId: id, orientation: orientation, name: name);
-            IO.Swagger.Model.AddActionPointOrientationRequest request = new IO.Swagger.Model.AddActionPointOrientationRequest(r_id, "AddActionPointOrientation", args);
-            SendDataToServer(request.ToJson(), r_id, true);
-            IO.Swagger.Model.AddActionPointOrientationResponse response = await WaitForResult<IO.Swagger.Model.AddActionPointOrientationResponse>(r_id);
-
-            if (response == null || !response.Result)
-                throw new RequestFailedException(response == null ? "Request timed out" : response.Messages[0]);
-        }
-
-            /// <summary>
-        /// Decodes changes on orientations
-        /// </summary>
-        /// <param name="data">Message from server</param>
-        private void HandleOrientationChanged(string data) {
-            HProjectManager.Instance.ProjectChanged = true;
-            IO.Swagger.Model.OrientationChanged orientationChanged = JsonConvert.DeserializeObject<IO.Swagger.Model.OrientationChanged>(data);
-            switch (orientationChanged.ChangeType) {
-                case IO.Swagger.Model.OrientationChanged.ChangeTypeEnum.Add:
-                    OnActionPointOrientationAdded?.Invoke(this, new ActionPointOrientationEventArgs(orientationChanged.Data, orientationChanged.ParentId));
-                    break;
-                case IO.Swagger.Model.OrientationChanged.ChangeTypeEnum.Remove:
-                    OnActionPointOrientationRemoved?.Invoke(this, new StringEventArgs(orientationChanged.Data.Id));
-                    break;
-                case IO.Swagger.Model.OrientationChanged.ChangeTypeEnum.Update:
-                    OnActionPointOrientationUpdated?.Invoke(this, new ActionPointOrientationEventArgs(orientationChanged.Data, null));
-                    break;
-                case IO.Swagger.Model.OrientationChanged.ChangeTypeEnum.Updatebase:
-                    OnActionPointOrientationBaseUpdated?.Invoke(this, new ActionPointOrientationEventArgs(orientationChanged.Data, null));
-
-                    break;
-                default:
-                    throw new NotImplementedException();
-            }
-        }
-
-           /// <summary>
-        /// Asks server to create and run temporary package. This package is not saved on execution unit and it is
-        /// removed immideately after package execution. Throws RequestFailedException when request failed
-        /// </summary>
-        /// <returns></returns>
-        public async Task TemporaryPackage(List<string> apBreakpoints, bool pauseOnFirstAction = false) {
-            int r_id = Interlocked.Increment(ref requestID);
-            IO.Swagger.Model.TemporaryPackageRequestArgs args = new TemporaryPackageRequestArgs(breakpoints: apBreakpoints, startPaused: pauseOnFirstAction);
-            IO.Swagger.Model.TemporaryPackageRequest request = new IO.Swagger.Model.TemporaryPackageRequest(id: r_id, request: "TemporaryPackage", args: args);
-            SendDataToServer(request.ToJson(), r_id, true);
-            IO.Swagger.Model.TemporaryPackageResponse response = await WaitForResult<IO.Swagger.Model.TemporaryPackageResponse>(r_id, 30000);
-            if (response == null || !response.Result)
-                throw new RequestFailedException(response == null ? "Request timed out" : response.Messages[0]);
-        }
-
-        /// <summary>
-        /// Asks server to create project.
-        /// Throws RequestFailedException when request failed
-        /// </summary>
-        /// <param name="name">Human readable name of project</param>
-        /// <param name="sceneId">UUID of scene</param>
-        /// <param name="description">Description of project</param>
-        /// <param name="hasLogic">Flags indicating if project specifies logical flow of thr program.</param>
-        /// <param name="dryRun">If true, validates all parameters, but will not execute requested action itself.</param>
-        /// <returns></returns>
-        public async Task CreateProject(string name, string sceneId, string description, bool hasLogic, bool dryRun) {
-            int r_id = Interlocked.Increment(ref requestID);
-            IO.Swagger.Model.NewProjectRequestArgs args = new IO.Swagger.Model.NewProjectRequestArgs(name: name, sceneId: sceneId, description: description, hasLogic: hasLogic);
-            IO.Swagger.Model.NewProjectRequest request = new IO.Swagger.Model.NewProjectRequest(r_id, "NewProject", args, dryRun: dryRun);
-            SendDataToServer(request.ToJson(), r_id, true);
-            IO.Swagger.Model.NewProjectResponse response = await WaitForResult<IO.Swagger.Model.NewProjectResponse>(r_id);
-
-            if (response == null || !response.Result)
-                throw new RequestFailedException(response == null ? "Request timed out" : response.Messages[0]);
-        }
-
-       /*      /// <summary>
-        /// Decodes package state
-        /// </summary>
-        /// <param name="obj"></param>
-        private void HandlePackageState(string obj) {
-            IO.Swagger.Model.PackageState projectState = JsonConvert.DeserializeObject<IO.Swagger.Model.PackageState>(obj);
-            GameManagerH.Instance.PackageStateUpdated(projectState.Data);
-        }
-
-        /// <summary>
-        /// Decodes package info
-        /// </summary>
-        /// <param name="obj">Message from server</param>
-        private void HandlePackageInfo(string obj) {
-            IO.Swagger.Model.PackageInfo packageInfo = JsonConvert.DeserializeObject<IO.Swagger.Model.PackageInfo>(obj);
-            GameManagerH.Instance.PackageInfo = packageInfo.Data;
-        }
+     /// <summary>
+     /// Decodes package info
+     /// </summary>
+     /// <param name="obj">Message from server</param>
+     private void HandlePackageInfo(string obj) {
+         IO.Swagger.Model.PackageInfo packageInfo = JsonConvert.DeserializeObject<IO.Swagger.Model.PackageInfo>(obj);
+         GameManagerH.Instance.PackageInfo = packageInfo.Data;
+     }
 
 */
+    public async Task<List<IO.Swagger.Model.Joint>> InverseKinematics(string robotId, string endEffectorId, bool avoidCollisions, IO.Swagger.Model.Pose pose, List<IO.Swagger.Model.Joint> startJoints) {
+        int r_id = Interlocked.Increment(ref requestID);
 
+        IO.Swagger.Model.InverseKinematicsRequestArgs args = new InverseKinematicsRequestArgs(robotId: robotId,
+            endEffectorId: endEffectorId, pose: pose, avoidCollisions: avoidCollisions, startJoints: startJoints, armId: "");
+
+        IO.Swagger.Model.InverseKinematicsRequest request = new IO.Swagger.Model.InverseKinematicsRequest(r_id, "InverseKinematics", args: args);
+        SendDataToServer(request.ToJson(), r_id, true);
+        IO.Swagger.Model.InverseKinematicsResponse response = await WaitForResult<IO.Swagger.Model.InverseKinematicsResponse>(r_id);
+
+        if (response == null || !response.Result) {
+            throw new RequestFailedException(response == null ? new List<string>() { "Failed to delete override of object parameter" } : response.Messages);
+        } else {
+            return response.Data;
+        }
+    }
 
 
 }
