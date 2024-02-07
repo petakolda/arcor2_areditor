@@ -1,18 +1,12 @@
-using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Base;
-using DanielLochner.Assets.SimpleSideMenu;
 using IO.Swagger.Model;
 using Michsky.UI.ModernUIPack;
-using RuntimeInspectorNamespace;
-using TMPro;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.EventSystems;
-using UnityEngine.UI;
 public class ActionPointAimingMenu : RightMenu<ActionPointAimingMenu> {
     public Base.ActionPoint CurrentActionPoint;
 
@@ -73,7 +67,7 @@ public class ActionPointAimingMenu : RightMenu<ActionPointAimingMenu> {
     }
 
     public override async Task<bool> Show(InteractiveObject obj, bool lockTree) {
-        
+
         if (!await base.Show(obj, lockTree))
             return false;
 
@@ -87,7 +81,7 @@ public class ActionPointAimingMenu : RightMenu<ActionPointAimingMenu> {
         } else {
             return false;
         }
-        
+
     }
     public async Task<bool> Show(Base.ActionPoint actionPoint, string preselectedOrientation) {
         if (!await Show(actionPoint, true))
@@ -238,8 +232,8 @@ public class ActionPointAimingMenu : RightMenu<ActionPointAimingMenu> {
     public async void UpdateMenu() {
         if (CurrentActionPoint == null)
             return;
-        CloseAnySubmenu();        
-         
+        CloseAnySubmenu();
+
         PositionExpertModeBlock.SetActive(GameManager.Instance.ExpertMode);
         RobotPickBlock.SetActive(!GameManager.Instance.ExpertMode);
         PositionManualEdit.SetPosition(CurrentActionPoint.Data.Position);
@@ -254,7 +248,7 @@ public class ActionPointAimingMenu : RightMenu<ActionPointAimingMenu> {
         } else {
             JointsDynamicList.SetActive(false);
         }
-        
+
 
         UpdateOrientationsDynamicList();
 
@@ -295,7 +289,7 @@ public class ActionPointAimingMenu : RightMenu<ActionPointAimingMenu> {
             JointsListLabel.text = "List of joints:";
         }
 
-        
+
     }
 
     public void ShowUpdatePositionConfirmationDialog() {
@@ -317,14 +311,6 @@ public class ActionPointAimingMenu : RightMenu<ActionPointAimingMenu> {
                 string armId = null;
                 if (SceneManager.Instance.SelectedRobot.MultiArm())
                     armId = SceneManager.Instance.SelectedArmId;
-                
-
-                /*
-                if (! await SceneManager.Instance.SelectedRobot.WriteLock(false)) {
-                    Notifications.Instance.ShowNotification("Failed to update position", "Robot could not be locked");
-                    return;
-                }*/
-                
                 await WebsocketManager.Instance.UpdateActionPointUsingRobot(CurrentActionPoint.GetId(), SceneManager.Instance.SelectedRobot.GetId(), SceneManager.Instance.SelectedEndEffector.EEId, armId);
                 await SceneManager.Instance.SelectedRobot.WriteUnlock();
             }
@@ -340,9 +326,6 @@ public class ActionPointAimingMenu : RightMenu<ActionPointAimingMenu> {
     public void OnPositionManualUpdateClick() {
         UpdateActionPointPosition(PositionManualEdit.GetPosition());
     }
-
-
-
 
 
     public void UpdateOrientationsDynamicList() {
@@ -456,11 +439,9 @@ public class ActionPointAimingMenu : RightMenu<ActionPointAimingMenu> {
 
 
     public void UpdateJointsDynamicList(string robot_id, string arm_id) {
-        
+
 
         try {
-            //string robotId = SceneManager.Instance.RobotNameToId(JointsRobotsList.GetValue().ToString());
-
             foreach (RectTransform o in JointsDynamicList.GetComponentsInChildren<RectTransform>()) {
                 if (o.gameObject.tag != "Persistent") {
                     Destroy(o.gameObject);
@@ -475,7 +456,7 @@ public class ActionPointAimingMenu : RightMenu<ActionPointAimingMenu> {
             foreach (IO.Swagger.Model.ProjectRobotJoints joint in joints) {
                 CreateJointsButton(JointsDynamicList.transform, joint.Id, joint.Name, () => OpenDetailMenu(joint), joint.IsValid);
             }
-            
+
         } catch (ItemNotFoundException ex) {
             Debug.LogError(ex);
             Notifications.Instance.ShowNotification("Failed to get robot's ID", "");

@@ -7,7 +7,6 @@ using Newtonsoft.Json;
 using System.Threading.Tasks;
 using NativeWebSocket;
 using IO.Swagger.Model;
-using UnityEditor;
 using UnityEngine.Events;
 
 
@@ -243,7 +242,7 @@ namespace Base {
             if (key < 0) {
                 key = Interlocked.Increment(ref requestID);
             }
-            
+
 
             if (storeResult) {
                 responses[key] = null;
@@ -432,7 +431,6 @@ namespace Base {
                         if (!result.Wait(timeout)) {
                             Debug.LogError("The timeout interval elapsed.");
                             //TODO: throw an exception and handle it properly
-                            //throw new TimeoutException();
                             return default;
                         } else {
                             value = result.Result;
@@ -577,7 +575,7 @@ namespace Base {
 
         private void HandleStateBefore(string obj) {
             string puck_id;
-            
+
             try {
 
                 IO.Swagger.Model.ActionStateBefore actionStateBefore = JsonConvert.DeserializeObject<IO.Swagger.Model.ActionStateBefore>(obj);
@@ -602,8 +600,8 @@ namespace Base {
                         ActionsManager.Instance.CurrentlyRunningAction.StopAction();
                     ActionsManager.Instance.CurrentlyRunningAction = null;
                 }
-                
-                
+
+
 
             } catch (NullReferenceException e) {
                 Debug.Log("Parse error in HandleCurrentAction()");
@@ -611,7 +609,7 @@ namespace Base {
             } catch (ItemNotFoundException e) {
                 Debug.LogError(e);
             }
-            
+
         }
 
         private void HandleActionStateAfter(string obj) {
@@ -623,24 +621,14 @@ namespace Base {
 
                 IO.Swagger.Model.ActionStateAfter actionStateBefore = JsonConvert.DeserializeObject<IO.Swagger.Model.ActionStateAfter>(obj);
                 if (ActionsManager.Instance.CurrentlyRunningAction != null)
-                        ActionsManager.Instance.CurrentlyRunningAction.StopAction();
-                    ActionsManager.Instance.CurrentlyRunningAction = null;
-                
+                    ActionsManager.Instance.CurrentlyRunningAction.StopAction();
+                ActionsManager.Instance.CurrentlyRunningAction = null;
+
             } catch (NullReferenceException e) {
                 Debug.Log("Parse error in HandleCurrentAction()");
                 return;
             }
-            // Stop previously running action (change its color to default)
-            /*if (ActionsManager.Instance.CurrentlyRunningAction != null)
-                ActionsManager.Instance.CurrentlyRunningAction.StopAction();
-            try {
-                Action puck = ProjectManager.Instance.GetAction(puck_id);
-                ActionsManager.Instance.CurrentlyRunningAction = puck;
-                // Run current action (set its color to running)
-                puck.RunAction();
-            } catch (ItemNotFoundException ex) {
-                Debug.LogError(ex);
-            }*/
+
         }
 
 
@@ -1107,7 +1095,7 @@ namespace Base {
         /// <returns></returns>
         public async Task RunPackage(string packageId) {
             int r_id = Interlocked.Increment(ref requestID);
-            IO.Swagger.Model.RunPackageRequestArgs args = new IO.Swagger.Model.RunPackageRequestArgs(id: packageId, breakpoints: new List<string>(), false);
+            IO.Swagger.Model.RunPackageRequestArgs args = new IO.Swagger.Model.RunPackageRequestArgs(id: packageId, breakpoints: new List<string>(), startPaused: false);
             IO.Swagger.Model.RunPackageRequest request = new IO.Swagger.Model.RunPackageRequest(id: r_id, request: "RunPackage", args);
             SendDataToServer(request.ToJson(), r_id, true);
             IO.Swagger.Model.RunPackageResponse response = await WaitForResult<IO.Swagger.Model.RunPackageResponse>(r_id, 30000);
@@ -1139,7 +1127,7 @@ namespace Base {
             IO.Swagger.Model.StopPackageRequest request = new IO.Swagger.Model.StopPackageRequest(id: r_id, request: "StopPackage");
             responsesCallback.Add(r_id, Tuple.Create("", callback));
             SendDataToServer(request.ToJson(), r_id, false);
-            
+
         }
 
         /// <summary>
@@ -1262,7 +1250,7 @@ namespace Base {
         /// <returns></returns>
         public async Task ObjectAimingStart(string objectId, string robotId, string endEffector, string armId = null, bool dryRun = false) {
             int r_id = Interlocked.Increment(ref requestID);
-            IO.Swagger.Model.RobotArg robotArg = new IO.Swagger.Model.RobotArg(armId: armId, endEffector:endEffector, robotId: robotId);
+            IO.Swagger.Model.RobotArg robotArg = new IO.Swagger.Model.RobotArg(armId: armId, endEffector: endEffector, robotId: robotId);
             IO.Swagger.Model.ObjectAimingStartRequestArgs args = new IO.Swagger.Model.ObjectAimingStartRequestArgs(objectId: objectId, robot: robotArg);
             IO.Swagger.Model.ObjectAimingStartRequest request = new IO.Swagger.Model.ObjectAimingStartRequest(id: r_id, request: "ObjectAimingStart", args: args, dryRun: dryRun);
             SendDataToServer(request.ToJson(), r_id, true);
@@ -1884,9 +1872,9 @@ namespace Base {
         /// <param name="robotId">ID of robot</param>
         /// <param name="name">Human readable name of joints</param>
         /// <returns></returns>
-        public async Task AddActionPointJoints(string id, string robotId, string name, string armId = null) {
+        public async Task AddActionPointJoints(string id, string robotId, string name, string endEffectorId, string armId = null) {
             int r_id = Interlocked.Increment(ref requestID);
-            IO.Swagger.Model.AddActionPointJointsUsingRobotRequestArgs args = new IO.Swagger.Model.AddActionPointJointsUsingRobotRequestArgs(actionPointId: id, robotId: robotId, name: name, armId: armId);
+            IO.Swagger.Model.AddActionPointJointsUsingRobotRequestArgs args = new IO.Swagger.Model.AddActionPointJointsUsingRobotRequestArgs(actionPointId: id, robotId: robotId, name: name, armId: armId, endEffectorId: endEffectorId);
             IO.Swagger.Model.AddActionPointJointsUsingRobotRequest request = new IO.Swagger.Model.AddActionPointJointsUsingRobotRequest(r_id, "AddActionPointJointsUsingRobot", args);
             SendDataToServer(request.ToJson(), r_id, true);
             IO.Swagger.Model.AddActionPointJointsUsingRobotResponse response = await WaitForResult<IO.Swagger.Model.AddActionPointJointsUsingRobotResponse>(r_id);
@@ -2172,7 +2160,7 @@ namespace Base {
             IO.Swagger.Model.RemoveLogicItemRequest request = new IO.Swagger.Model.RemoveLogicItemRequest(r_id, "RemoveLogicItem", args);
             SendDataToServer(request.ToJson(), r_id, true);
             IO.Swagger.Model.RemoveLogicItemResponse response = await WaitForResult<IO.Swagger.Model.RemoveLogicItemResponse>(r_id);
-            
+
             if (response == null || !response.Result)
                 throw new RequestFailedException(response == null ? "Request timed out" : response.Messages[0]);
         }
@@ -2687,7 +2675,7 @@ namespace Base {
             int r_id = Interlocked.Increment(ref requestID);
             IO.Swagger.Model.UpdateObjectModelRequestArgs args = new UpdateObjectModelRequestArgs(objectModel: objectModel, objectTypeId: id);
 
-            IO.Swagger.Model.UpdateObjectModelRequest request = new IO.Swagger.Model.UpdateObjectModelRequest (r_id, "UpdateObjectModel", args: args, dryRun: dryRun);
+            IO.Swagger.Model.UpdateObjectModelRequest request = new IO.Swagger.Model.UpdateObjectModelRequest(r_id, "UpdateObjectModel", args: args, dryRun: dryRun);
             SendDataToServer(request.ToJson(), r_id, true);
             IO.Swagger.Model.UpdateObjectModelResponse response = await WaitForResult<IO.Swagger.Model.UpdateObjectModelResponse>(r_id);
             if (response == null || !response.Result) {
@@ -2737,7 +2725,7 @@ namespace Base {
 
         public async Task StepAction() {
             int r_id = Interlocked.Increment(ref requestID);
-            
+
             IO.Swagger.Model.StepActionRequest request = new IO.Swagger.Model.StepActionRequest(r_id, "StepAction");
             SendDataToServer(request.ToJson(), r_id, true);
             IO.Swagger.Model.StepActionResponse response = await WaitForResult<IO.Swagger.Model.StepActionResponse>(r_id);

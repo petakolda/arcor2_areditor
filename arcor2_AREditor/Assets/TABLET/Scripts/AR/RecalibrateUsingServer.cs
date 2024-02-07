@@ -1,6 +1,4 @@
 using System;
-using System.Collections;
-using System.Collections.Generic;
 using System.Threading.Tasks;
 using Base;
 using UnityEngine;
@@ -18,19 +16,13 @@ public class RecalibrateUsingServer : InteractiveObject {
         base.Start();
     }
 
-    public override void OnClick(Click type) {
-        if (GameManager.Instance.GetEditorState() != GameManager.EditorStateEnum.Normal) {
-            return;
-        }
-        Calibrate();
-    }
 
     public void CreateSelectorItem() {
         SelectorItem = SelectorMenu.Instance.CreateSelectorItem(this);
     }
 
     public void Calibrate() {
-        CalibrationManager.Instance.RecalibrateUsingServer(inverse:true, showNotification:true);
+        CalibrationManager.Instance.RecalibrateUsingServer(inverse: true, showNotification: true);
     }
 
 

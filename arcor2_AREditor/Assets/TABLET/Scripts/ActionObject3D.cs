@@ -1,4 +1,3 @@
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
@@ -6,8 +5,6 @@ using Base;
 using IO.Swagger.Model;
 using TriLibCore;
 using System;
-using TriLibCore.General;
-using System.Threading.Tasks;
 
 [RequireComponent(typeof(OutlineOnClick))]
 [RequireComponent(typeof(Target))]
@@ -35,7 +32,7 @@ public class ActionObject3D : ActionObject {
 
     }
 
-    
+
     public override Vector3 GetScenePosition() {
         return TransformConvertor.ROSToUnity(DataHelper.PositionToVector3(Data.Pose.Position));
     }
@@ -50,33 +47,6 @@ public class ActionObject3D : ActionObject {
 
     public override void SetSceneOrientation(Quaternion orientation) {
         Data.Pose.Orientation = DataHelper.QuaternionToOrientation(TransformConvertor.UnityToROS(orientation));
-    }
-
-    public async override void OnClick(Click type) {
-    //    if (GameManager.Instance.GetEditorState() == GameManager.EditorStateEnum.SelectingActionObject ||
-    //        GameManager.Instance.GetEditorState() == GameManager.EditorStateEnum.SelectingActionPointParent) {
-    //        GameManager.Instance.ObjectSelected(this);
-    //        return;
-    //    }
-    //    if (GameManager.Instance.GetEditorState() != GameManager.EditorStateEnum.Normal) {
-    //        return;
-    //    }
-    //    if (GameManager.Instance.GetGameState() != GameManager.GameStateEnum.SceneEditor &&
-    //        GameManager.Instance.GetGameState() != GameManager.GameStateEnum.ProjectEditor) {
-    //        Notifications.Instance.ShowNotification("Not allowed", "Editation of action object only allowed in scene or project editor");
-    //        return;
-    //    }
-
-    //    outlineOnClick.GizmoUnHighlight();
-    //    // HANDLE MOUSE
-    //    if (type == Click.MOUSE_LEFT_BUTTON || type == Click.LONG_TOUCH) {
-    //        // We have clicked with left mouse and started manipulation with object
-    //        if (GameManager.Instance.GetGameState() == GameManager.GameStateEnum.SceneEditor) {
-    //            StartManipulation();
-    //        }
-    //    } else if (type == Click.MOUSE_RIGHT_BUTTON || type == Click.TOUCH) {
-    //        OpenMenu();
-    //    }
     }
 
     public override void UpdateObjectName(string newUserId) {
@@ -172,7 +142,6 @@ public class ActionObject3D : ActionObject {
 
     public override void SetInteractivity(bool interactivity) {
         Debug.Assert(Model != null && ActionObjectMetadata.HasPose);
-        //Model.GetComponent<Collider>().enabled = interactivity;
         if (ActionObjectMetadata.ObjectModel != null &&
             ActionObjectMetadata.ObjectModel.Type == ObjectModel.TypeEnum.Mesh) {
             foreach (var col in Colliders) {
@@ -189,7 +158,7 @@ public class ActionObject3D : ActionObject {
     }
 
     public override void CreateModel(CollisionModels customCollisionModels = null) {
-       
+
         if (ActionObjectMetadata.ObjectModel == null || ActionObjectMetadata.ObjectModel.Type == IO.Swagger.Model.ObjectModel.TypeEnum.None) {
             Model = Instantiate(CubePrefab, Visual.transform);
             Model.transform.localScale = new Vector3(0.05f, 0.01f, 0.05f);
@@ -248,10 +217,7 @@ public class ActionObject3D : ActionObject {
                     break;
             }
         }
-        //if (IsRobot()) {
-        //    Model.tag = "Robot";
-        //}
-        
+
         gameObject.GetComponent<BindParentToChild>().ChildToBind = Model;
         Collider = Model.GetComponent<Collider>();
         Colliders.Add(Collider);
@@ -296,7 +262,7 @@ public class ActionObject3D : ActionObject {
         Model.gameObject.transform.localRotation = Quaternion.identity;
 
         gameObject.GetComponent<BindParentToChild>().ChildToBind = Model;
-        
+
         foreach (Renderer child in Model.GetComponentsInChildren<Renderer>(true)) {
             child.gameObject.AddComponent<OnClickCollider>().Target = gameObject;
             child.gameObject.AddComponent<MeshCollider>();
@@ -308,9 +274,7 @@ public class ActionObject3D : ActionObject {
         Colliders.AddRange(Model.GetComponentsInChildren<MeshCollider>(true));
         outlineOnClick.InitRenderers(aoRenderers);
         outlineOnClick.InitMaterials();
-
-        //transparent = false; //needs to be set before 1st call of SetVisibility after model loading
-        SetVisibility(visibility, forceShaderChange:true);
+        SetVisibility(visibility, forceShaderChange: true);
 
         if (outlineWasHighlighted) {
             outlineOnClick.Highlight();
@@ -330,7 +294,7 @@ public class ActionObject3D : ActionObject {
         Notifications.Instance.ShowNotification("Unable to show mesh " + this.GetName(), obj.GetInnerException().Message);
     }
 
-    
+
 
 
     public override void OnHoverStart() {
@@ -456,7 +420,7 @@ public class ActionObject3D : ActionObject {
         switch (ActionObjectMetadata.ObjectModel.Type) {
             case ObjectModel.TypeEnum.Box:
                 dimensions = TransformConvertor.ROSToUnityScale(new Vector3((float) ActionObjectMetadata.ObjectModel.Box.SizeX, (float) ActionObjectMetadata.ObjectModel.Box.SizeY, (float) ActionObjectMetadata.ObjectModel.Box.SizeZ));
-               break;
+                break;
             case ObjectModel.TypeEnum.Sphere:
                 dimensions = TransformConvertor.ROSToUnityScale(new Vector3((float) ActionObjectMetadata.ObjectModel.Sphere.Radius, (float) ActionObjectMetadata.ObjectModel.Sphere.Radius, (float) ActionObjectMetadata.ObjectModel.Sphere.Radius));
                 break;

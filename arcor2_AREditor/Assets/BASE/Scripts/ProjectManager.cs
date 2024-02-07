@@ -1,4 +1,3 @@
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using System.Threading.Tasks;
@@ -88,14 +87,9 @@ namespace Base {
                 if (origVal != value) {
                     OnProjectSavedSatusChanged?.Invoke(this, EventArgs.Empty);
                 }
-            } 
+            }
         }
 
-
-        /// <summary>
-        /// Invoked when some of the action point weas updated. Contains action point description
-        /// </summary>
-        //public event AREditorEventArgs.ActionPointUpdatedEventHandler OnActionPointUpdated; 
         /// <summary>
         /// Invoked when project loaded
         /// </summary>
@@ -302,7 +296,7 @@ namespace Base {
                 return;
             }
         }
-        
+
 
         private void OnActionPointAdded(object sender, ProjectActionPointEventArgs data) {
             ActionPoint ap = null;
@@ -317,7 +311,7 @@ namespace Base {
                 }
 
             }
-            
+
             updateProject = true;
         }
 
@@ -325,7 +319,7 @@ namespace Base {
             if (GameManager.Instance.GetGameState() == GameManager.GameStateEnum.ProjectEditor) {
                 SetProjectMeta(args.Project);
                 updateProject = true;
-            } 
+            }
         }
 
         /// <summary>
@@ -349,7 +343,7 @@ namespace Base {
                     break;
                 }
 
-            StartAction = Instantiate(StartPrefab,  SceneManager.Instance.SceneOrigin.transform).GetComponent<StartAction>();
+            StartAction = Instantiate(StartPrefab, SceneManager.Instance.SceneOrigin.transform).GetComponent<StartAction>();
             StartAction.Init(null, null, null, null, "START");
             EndAction = Instantiate(EndPrefab, SceneManager.Instance.SceneOrigin.transform).GetComponent<EndAction>();
             EndAction.Init(null, null, null, null, "END");
@@ -361,7 +355,7 @@ namespace Base {
                         Parameter parameter = new Parameter(meta, p.Value);
                         actionObject.Overrides[p.Name] = parameter;
                     }
-                    
+
                 }
             }
 
@@ -370,10 +364,6 @@ namespace Base {
             if (project.HasLogic) {
                 UpdateLogicItems(project.Logic);
             }
-            // update orientation of all actions
-            /*foreach (Action action in GetAllActions()) {
-                action.UpdateRotation();
-            }*/
             if (project.Modified == System.DateTime.MinValue) { //new project, never saved
                 projectChanged = true;
             } else if (project.IntModified == System.DateTime.MinValue) {
@@ -407,7 +397,7 @@ namespace Base {
             if (StartAction != null) {
                 Destroy(StartAction.gameObject);
                 StartAction = null;
-            }               
+            }
             if (EndAction != null) {
                 Destroy(EndAction.gameObject);
                 EndAction = null;
@@ -487,7 +477,7 @@ namespace Base {
             ProjectMeta.IntModified = project.IntModified;
             ProjectMeta.Modified = project.Modified;
             ProjectMeta.Name = project.Name;
-            
+
         }
 
         /// <summary>
@@ -504,7 +494,7 @@ namespace Base {
                 foreach (Action action in ap.Actions.Values) {
                     IO.Swagger.Model.Action projectAction = new IO.Swagger.Model.Action(id: action.Data.Id,
                         name: action.Data.Name, type: action.Data.Type) {
-                        Parameters = new List<IO.Swagger.Model.ActionParameter>()                        
+                        Parameters = new List<IO.Swagger.Model.ActionParameter>()
                     };
                     foreach (Parameter param in action.Parameters.Values) {
                         projectAction.Parameters.Add(param);
@@ -527,7 +517,7 @@ namespace Base {
 
 
         private void Update() {
-            
+
             if (updateProject) {
                 ProjectChanged = true;
                 updateProject = false;
@@ -570,7 +560,7 @@ namespace Base {
         public ActionPoint SpawnActionPoint(IO.Swagger.Model.ActionPoint apData, IActionPointParent actionPointParent) {
             Debug.Assert(apData != null);
             GameObject AP;
-            if (actionPointParent == null) {               
+            if (actionPointParent == null) {
                 AP = Instantiate(ActionPointPrefab, ActionPointsOrigin.transform);
             } else {
                 AP = Instantiate(ActionPointPrefab, actionPointParent.GetSpawnPoint());
@@ -667,7 +657,6 @@ namespace Base {
         public void UpdateActionPoints(Project project) {
             List<string> currentAP = new List<string>();
             List<string> currentActions = new List<string>();
-            // key = parentId, value = list of APs with given parent
             Dictionary<string, List<IO.Swagger.Model.ActionPoint>> actionPointsWithParents = new Dictionary<string, List<IO.Swagger.Model.ActionPoint>>();
             // ordered list of already processed parents. This ensure that global APs are processed first,
             // then APs with action objects as a parents and then APs with already processed AP parents
@@ -715,8 +704,6 @@ namespace Base {
                         // update actions in current action point 
                         (List<string>, Dictionary<string, string>) updateActionsResult = actionPoint.UpdateActionPoint(projectActionPoint);
                         currentActions.AddRange(updateActionsResult.Item1);
-                        // merge dictionaries
-                        //connections = connections.Concat(updateActionsResult.Item2).GroupBy(i => i.Key).ToDictionary(i => i.Key, i => i.First().Value);
 
                         actionPoint.UpdatePositionsOfPucks();
 
@@ -725,11 +712,8 @@ namespace Base {
                         processedParents.Add(projectActionPoint.Id);
                     }
                 }
-                
-            }
-            
 
-            //UpdateActionConnections(project.ActionPoints, connections);
+            }
 
             // Remove deleted actions
             foreach (string actionId in GetAllActionsDict().Keys.ToList<string>()) {
@@ -893,6 +877,11 @@ namespace Base {
             throw new ItemNotFoundException("No orientation available");
         }
 
+        public ActionPoint GetAnyActionPoint() {
+            if (ActionPoints.Count > 0)
+                return ActionPoints.First().Value;
+            throw new ItemNotFoundException("No action point available");
+        }
 
         /// <summary>
         /// Returns action point containing orientation with id or throws KeyNotFoundException
@@ -991,40 +980,12 @@ namespace Base {
                 EndAction.Enable(enable);
         }
 
-        /// <summary>
-        /// Disables all action inputs
-        /// </summary>
-        public void EnableAllActionInputs(bool enable) {
-            if (!Valid)
-                return;
-            foreach (ActionPoint ap in ActionPoints.Values) {
-                foreach (Action action in ap.Actions.Values)
-                    ;
-                    //action.Input.Enable(enable);
-            }
-            //EndAction.Input.Enable(enable);
-        }
 
-
-        /// <summary>
-        /// Disable all action outputs
-        /// </summary>
-        public void EnableAllActionOutputs(bool enable) {
-            if (!Valid)
-                return;
-            foreach (ActionPoint ap in ActionPoints.Values) {
-                foreach (Action action in ap.Actions.Values)
-                    ;
-                    //action.Output.Enable(enable);
-            }
-            //StartAction.Output.Enable(enable);
-        }
 
 
         #region ACTIONS
 
         public Action SpawnAction(IO.Swagger.Model.Action projectAction, ActionPoint ap) {
-            //string action_id, string action_name, string action_type, 
             Debug.Assert(!ActionsContainsName(projectAction.Name));
             ActionMetadata actionMetadata;
             string providerName = projectAction.Type.Split('/').First();
@@ -1033,7 +994,7 @@ namespace Base {
             try {
                 actionProvider = SceneManager.Instance.GetActionObject(providerName);
             } catch (KeyNotFoundException ex) {
-                throw new RequestFailedException("PROVIDER NOT FOUND EXCEPTION: " + providerName + " " + actionType);                
+                throw new RequestFailedException("PROVIDER NOT FOUND EXCEPTION: " + providerName + " " + actionType);
             }
 
             try {
@@ -1117,7 +1078,6 @@ namespace Base {
                 }
             }
 
-            //Debug.LogError("Action " + Id + " not found!");
             throw new ItemNotFoundException("Action with ID " + id + " not found");
         }
 
@@ -1135,7 +1095,6 @@ namespace Base {
                 }
             }
 
-            //Debug.LogError("Action " + id + " not found!");
             throw new ItemNotFoundException("Action with name " + name + " not found");
         }
 
@@ -1217,7 +1176,7 @@ namespace Base {
                 OnActionAddedToScene.Invoke(this, new ActionEventArgs(action));
             } catch (RequestFailedException ex) {
                 Debug.LogError(ex);
-            }            
+            }
         }
 
         /// <summary>
@@ -1253,12 +1212,6 @@ namespace Base {
         public void SetActionInputOutputVisibility(bool visible) {
             if (!Valid || !ProjectMeta.HasLogic)
                 return;
-            /*foreach (Action action in GetAllActions()) {
-                action.EnableInputOutput(visible);
-            }
-            StartAction.EnableInputOutput(visible);
-            EndAction.EnableInputOutput(visible);*/
-            //SelectorMenu.Instance.ShowIO(visible);
             if (SelectorMenu.Instance.IOToggle.Toggled != visible)
                 SelectorMenu.Instance.IOToggle.SwitchToggle();
             SelectorMenu.Instance.IOToggle.SetInteractivity(visible, "Connections are hidden");

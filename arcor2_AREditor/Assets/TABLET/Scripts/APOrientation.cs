@@ -1,6 +1,4 @@
 using System;
-using System.Collections;
-using System.Collections.Generic;
 using System.Threading.Tasks;
 using Base;
 using IO.Swagger.Model;
@@ -19,21 +17,10 @@ public class APOrientation : InteractiveObject, ISubItem {
     [SerializeField]
     private MeshRenderer renderer;
 
-
-    public override void OnClick(Click type) {
-        if (GameManager.Instance.GetEditorState() != GameManager.EditorStateEnum.Normal) {
-            return;
-        }
-        if (type == Click.MOUSE_RIGHT_BUTTON || (type == Click.TOUCH)) {
-            OpenMenu();
-        }       
-        
-    }
-
     public override void OnHoverStart() {
         if (!enabled)
             return;
-        
+
 
         HighlightOrientation(true);
         if (SelectorMenu.Instance.ManuallySelected) {
@@ -130,7 +117,7 @@ public class APOrientation : InteractiveObject, ISubItem {
             c = Color.gray;
         foreach (Renderer r in outlineOnClick.Renderers)
             r.material.color = c;
-            
+
     }
 
     public InteractiveObject GetParentObject() {

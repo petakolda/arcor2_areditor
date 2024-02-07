@@ -1,19 +1,14 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.IO;
-using System.IO.Compression;
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 using IO.Swagger.Model;
 using UnityEngine;
-using UnityEngine.Networking;
 using WebSocketSharp;
-using static Base.GameManager;
 
 namespace Base {
-   
+
     /// <summary>
     /// Takes care of currently opened scene
     /// </summary>
@@ -144,7 +139,7 @@ namespace Base {
         public string SelectCreatedActionObject;
         public bool OpenTransformMenuOnCreatedObject;
 
-        
+
 
         public bool Valid = false;
         /// <summary>
@@ -188,7 +183,7 @@ namespace Base {
             if (SceneMeta != null)
                 return false;
             SelectorMenu.Instance.Clear();
-            SetSceneMeta(DataHelper.SceneToBareScene(scene));            
+            SetSceneMeta(DataHelper.SceneToBareScene(scene));
             this.loadResources = loadResources;
             LoadSettings();
 
@@ -248,27 +243,10 @@ namespace Base {
             }
             return scene;
         }
-        
+
 
         // Update is called once per frame
         private void Update() {
-            // Activates scene if the AREditor is in SceneEditor mode and scene is interactable (no windows are openned).
-            /*if (GameManager.Instance.GetGameState() == GameManager.GameStateEnum.SceneEditor &&
-                GameManager.Instance.SceneInteractable &&
-                GameManager.Instance.GetEditorState() == GameManager.EditorStateEnum.Normal) {
-                if (!sceneActive && (ControlBoxManager.Instance.UseGizmoMove || ControlBoxManager.Instance.UseGizmoRotate)) {
-                    ActivateActionObjectsForGizmo(true);
-                    sceneActive = true;
-                } else if (sceneActive && !(ControlBoxManager.Instance.UseGizmoMove || ControlBoxManager.Instance.UseGizmoRotate)) {
-                    ActivateActionObjectsForGizmo(false);
-                    sceneActive = false;
-                }
-            } else {
-                if (sceneActive) {
-                    ActivateActionObjectsForGizmo(false);
-                    sceneActive = false;
-                }
-            }*/
             if (updateScene) {
                 SceneChanged = true;
                 updateScene = false;
@@ -279,7 +257,6 @@ namespace Base {
         /// Initialization of scene manager
         /// </summary>
         private void Start() {
-            OnLoadScene += OnSceneLoaded;
             WebsocketManager.Instance.OnRobotEefUpdated += RobotEefUpdated;
             WebsocketManager.Instance.OnRobotJointsUpdated += RobotJointsUpdated;
             WebsocketManager.Instance.OnSceneBaseUpdated += OnSceneBaseUpdated;
@@ -309,12 +286,12 @@ namespace Base {
                     Parameter p = new Parameter(parameterMeta, args.Parameter.Value);
                     actionObject.Overrides[args.Parameter.Name] = p;
                 }
-                
+
             } catch (KeyNotFoundException ex) {
                 Debug.LogError(ex);
-                
+
             }
-            
+
         }
 
         private async void OnSceneState(object sender, SceneStateEventArgs args) {
@@ -453,7 +430,7 @@ namespace Base {
 
                 robot.SetJointValue(args.Data.Joints);
             } catch (ItemNotFoundException) {
-                
+
             }
         }
 
@@ -475,20 +452,10 @@ namespace Base {
                 } catch (ItemNotFoundException) {
                     continue;
                 }
-                
+
             }
         }
 
-        /// <summary>
-        /// Initialize robots end effectors
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void OnSceneLoaded(object sender, EventArgs e) {
-            /*if (RobotsEEVisible) {
-                ShowRobotsEE();
-            }*/
-        }
 
         /// <summary>
         /// Return true if there is any robot in scene
@@ -566,7 +533,7 @@ namespace Base {
             CurrentlySelectedObject = obj;
         }
 
-      
+
         /// <summary>
         /// Computes point above selected transform which is collision free
         /// </summary>
@@ -581,7 +548,7 @@ namespace Base {
             tmpGo.transform.localRotation = Quaternion.identity;
 
             Collider[] colliders = Physics.OverlapBox(transform.position, bbSize, orientation);   //OverlapSphere(tmpGo.transform.position, 0.025f);
-            
+
             // to avoid infinite loop
             int i = 0;
             while (colliders.Length > 0 && i < 40) {
@@ -610,7 +577,6 @@ namespace Base {
             }
             GameObject obj;
             if (aom.Robot) {
-                //Debug.Log("URDF: spawning RobotActionObject");
                 obj = Instantiate(RobotPrefab, ActionObjectsSpawn.transform);
             } else if (aom.CollisionObject) {
                 obj = Instantiate(CollisionObjectPrefab, ActionObjectsSpawn.transform);
@@ -621,7 +587,7 @@ namespace Base {
             }
             ActionObject actionObject = obj.GetComponent<ActionObject>();
             actionObject.InitActionObject(sceneObject, obj.transform.localPosition, obj.transform.localRotation, aom, customCollisionModels);
-            
+
             // Add the Action Object into scene reference
             ActionObjects.Add(sceneObject.Id, actionObject);
             actionObject.SetVisibility(ActionObjectsVisibility);
@@ -686,9 +652,9 @@ namespace Base {
                     hasFreeName = false;
                     freeName = sceneName + "_" + i++.ToString();
                 } catch (RequestFailedException) {
-                    
+
                 }
-                    
+
             } while (!hasFreeName);
 
             return freeName;
@@ -703,7 +669,7 @@ namespace Base {
             foreach (ActionObject actionObject in ActionObjects.Values) {
                 if (actionObject.IsRobot()) {
                     robots.Add((RobotActionObject) actionObject);
-                }                    
+                }
             }
             return robots;
         }
@@ -980,7 +946,7 @@ namespace Base {
                 if (actionObject.GetName() == name) {
                     actionObjectOut = actionObject;
                     return true;
-                }   
+                }
             }
             actionObjectOut = null;
             return false;
@@ -1003,7 +969,7 @@ namespace Base {
         /// <summary>
         /// Enables all action objects
         /// </summary>
-        public void EnableAllActionObjects(bool enable, bool includingRobots=true) {
+        public void EnableAllActionObjects(bool enable, bool includingRobots = true) {
             foreach (ActionObject ao in ActionObjects.Values) {
                 if (!includingRobots && ao.IsRobot())
                     continue;
@@ -1040,8 +1006,8 @@ namespace Base {
         public List<ActionObject> GetAllObjectsOfType(string type) {
             return ActionObjects.Values.Where(obj => obj.ActionObjectMetadata.Type == type).ToList();
         }
-             
-        
+
+
 
         #endregion
 

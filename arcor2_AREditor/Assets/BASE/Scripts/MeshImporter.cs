@@ -6,7 +6,6 @@ using System.IO.Compression;
 using System.Net;
 using Base;
 using TriLibCore;
-using TriLibCore.General;
 using UnityEngine;
 using UnityEngine.Networking;
 
@@ -27,10 +26,10 @@ public class MeshImporter : Singleton<MeshImporter> {
     /// <param name="mesh"></param>
     /// <param name="aoId">ID of action object which is asociated with the mesh</param>
     public void LoadModel(IO.Swagger.Model.Mesh mesh, string aoId) {
-        if (CheckIfNewerRobotModelExists(mesh.Id, mesh.DataId)) {
-            StartCoroutine(DownloadMesh(mesh.Id, mesh.DataId, aoId));
+        if (CheckIfNewerRobotModelExists(mesh.Id, mesh.AssetId)) {
+            StartCoroutine(DownloadMesh(mesh.Id, mesh.AssetId, aoId));
         } else {
-            StartCoroutine(ImportMeshWhenReady(string.Format("{0}/meshes/{1}/{2}", Application.persistentDataPath, mesh.Id, mesh.DataId), aoId, mesh.DataId));
+            StartCoroutine(ImportMeshWhenReady(string.Format("{0}/meshes/{1}/{2}", Application.persistentDataPath, mesh.Id, mesh.AssetId), aoId, mesh.AssetId));
         }
     }
 
@@ -50,14 +49,16 @@ public class MeshImporter : Singleton<MeshImporter> {
 
         GameObject loadedObject = new GameObject("ImportedMeshObject");
         if (Path.GetExtension(path).ToLower() == ".dae") {
-        //Debug.LogError("importing dae mesh name: " + path);
+            //Debug.LogError("importing dae mesh name: " + path);
             StreamReader reader = File.OpenText(path);
             string daeFile = reader.ReadToEnd();
 
             // Requires Simple Collada asset from Unity Asset Store: https://assetstore.unity.com/packages/tools/input-management/simple-collada-19579
             // Supports: DAE
             StartCoroutine(ColladaImporter.Instance.ImportAsync(daeFile, Quaternion.identity, Vector3.one, Vector3.zero,
-                onModelImported: delegate (GameObject loadedGameObject) { OnMeshImported?.Invoke(this, new ImportedMeshEventArgs(loadedGameObject, aoId));},
+                onModelImported: delegate (GameObject loadedGameObject) {
+                    OnMeshImported?.Invoke(this, new ImportedMeshEventArgs(loadedGameObject, aoId));
+                },
                 wrapperGameObject: loadedObject));
 
         } else {
@@ -66,7 +67,7 @@ public class MeshImporter : Singleton<MeshImporter> {
             AssetLoaderOptions assetLoaderOptions = AssetLoader.CreateDefaultLoaderOptions();
             AssetLoader.LoadModelFromFile(path, null, delegate (AssetLoaderContext assetLoaderContext) {
                 if (Path.GetExtension(path).ToLower() == ".stl") {
-                    assetLoaderContext.RootGameObject.transform.Rotate(0f, 180f, 0f); // TODO kinali hacked version had 0, 90f, 0
+                    assetLoaderContext.RootGameObject.transform.Rotate(0f, 90f, 0f);
                 }
 
                 OnMeshImported?.Invoke(this, new ImportedMeshEventArgs(assetLoaderContext.WrapperGameObject, aoId));
@@ -84,7 +85,8 @@ public class MeshImporter : Singleton<MeshImporter> {
     private IEnumerator DownloadMesh(string meshId, string fileName, string aoId) {
 
         //Debug.LogError("MESH: download started");
-        string uri = MainSettingsMenu.Instance.GetProjectServiceURI() + fileName;
+        string uri = MainSettingsMenu.Instance.GetAssetFileURI(fileName);
+        Debug.LogError(uri);
         using (UnityWebRequest www = UnityWebRequest.Get(uri)) {
             // Request and wait for the desired page.
             yield return www.Send();
@@ -97,7 +99,7 @@ public class MeshImporter : Singleton<MeshImporter> {
                 string savePath = string.Format("{0}/{1}", meshDirectory, fileName);
                 System.IO.File.WriteAllBytes(savePath, www.downloadHandler.data);
                 meshSources[fileName] = false;
-                   
+
                 //Debug.LogError("MESH: download finished");
                 //if the mesh is zipped, extract it
                 if (Path.GetExtension(savePath).ToLower() == ".zip") {
@@ -147,7 +149,7 @@ public class MeshImporter : Singleton<MeshImporter> {
     private string GetPathToMesh(string meshId) {
         if (Path.GetExtension(meshId).ToLower() == ".zip") {
             string path = string.Format("{0}/meshes/{1}/mesh/", Application.persistentDataPath, meshId);
-            string[] extensions = { "dae", "fbx", "obj", "gltf2", "stl", "ply", "3mf"};
+            string[] extensions = { "dae", "fbx", "obj", "gltf2", "stl", "ply", "3mf" };
             string[] files = { };
             foreach (var extension in extensions) {
                 files = System.IO.Directory.GetFiles(path, "*." + extension);
@@ -198,8 +200,9 @@ public class MeshImporter : Singleton<MeshImporter> {
             // Check whether downloading can be started and start it, if so.
             return CanIDownload(meshId);
         }
-        
-        string uri = MainSettingsMenu.Instance.GetProjectServiceURI() + fileName;
+
+        string uri = MainSettingsMenu.Instance.GetAssetFileURI(fileName);
+
         DateTime downloadedZipLastModified = meshFileInfo.LastWriteTime;
         try {
             HttpWebRequest httpWebRequest = (HttpWebRequest) WebRequest.Create(uri);
@@ -259,7 +262,7 @@ public class ImportedMeshEventArgs : EventArgs {
     }
 
     public string Name {
-        get;set;
+        get; set;
     }
 
     public ImportedMeshEventArgs(GameObject gameObject, string name) {

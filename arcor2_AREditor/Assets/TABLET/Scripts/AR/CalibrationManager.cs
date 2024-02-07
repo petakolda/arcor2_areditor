@@ -5,8 +5,6 @@ using Base;
 using UnityEngine;
 using UnityEngine.XR.ARFoundation;
 using UnityEngine.XR.ARSubsystems;
-using Unity.Collections;
-using Unity.Collections.LowLevel.Unsafe;
 using System.Threading.Tasks;
 using IO.Swagger.Model;
 using static Base.AREditorEventArgs;
@@ -22,9 +20,9 @@ public class CalibrationManager : Singleton<CalibrationManager> {
         Failure,
         Processing
     }
-//#if (UNITY_ANDROID || UNITY_IOS) && AR_ON
-//    public ARCoreExtensions ARCoreExt;
-//#endif
+    //#if (UNITY_ANDROID || UNITY_IOS) && AR_ON
+    //    public ARCoreExtensions ARCoreExt;
+    //#endif
     public ARSessionOrigin ARSessionOrigin;
     public ARAnchorManager ARAnchorManager;
     public ARPlaneManager ARPlaneManager;
@@ -34,7 +32,7 @@ public class CalibrationManager : Singleton<CalibrationManager> {
     public ARCameraManager ARCameraManager;
     public Transform ARCamera;
     public GameObject WorldAnchorPrefab;
-    
+
     public VideoPlayerImage TrackingLostAnimation;
 
     [HideInInspector]
@@ -188,10 +186,10 @@ public class CalibrationManager : Singleton<CalibrationManager> {
         }
     }
 
-#region Calibration using ARFoundation
+    #region Calibration using ARFoundation
 
     private void RunLocalARFoundationCalibration() {
-        #if (UNITY_ANDROID || UNITY_IOS) && AR_ON
+#if (UNITY_ANDROID || UNITY_IOS) && AR_ON
         // If we used server calibration before, remove all server anchors and prepare for local calibration
         if (UsingServerCalibration) {
             //Debug.Log("Local: Was using server calibration");
@@ -217,7 +215,7 @@ public class CalibrationManager : Singleton<CalibrationManager> {
             }
             localCalibration = StartCoroutine(Calibrate());
         }
-        
+
         UsingServerCalibration = false;
 #endif
     }
@@ -229,7 +227,6 @@ public class CalibrationManager : Singleton<CalibrationManager> {
                 StopCoroutine(autoCalibration);
             }
             autoCalibration = StartCoroutine(AutoCalibrate());
-            //Debug.Log("AUTO RECALIBRATION " + AutoRecalibration);
         }
     }
 
@@ -424,12 +421,12 @@ public class CalibrationManager : Singleton<CalibrationManager> {
     }
 
     private void AttachScene(GameObject worldAnchor) {
-    //private void AttachScene(GameObject worldAnchor, bool initLocalAnchor = false) {
+        //private void AttachScene(GameObject worldAnchor, bool initLocalAnchor = false) {
         //if (initLocalAnchor) {
         //    WorldAnchorLocal = ARAnchorManager.AddAnchor(new Pose(Camera.main.transform.position, Camera.main.transform.rotation));
         //    GameManager.Instance.Scene.transform.parent = WorldAnchorLocal.gameObject.transform;
         //} else
-        if(worldAnchor != null) {
+        if (worldAnchor != null) {
             GameManager.Instance.Scene.transform.parent = worldAnchor.transform;
         }
 
@@ -457,7 +454,7 @@ public class CalibrationManager : Singleton<CalibrationManager> {
             if (WorldAnchorCloud == null) {
                 Notifications.Instance.ShowNotification("Cloud anchor fail", "Cloud anchor couldn't be loaded");
                 Debug.Log("Cloud anchor fail: Cloud anchor couldn't be loaded " + cloudAnchorId);
-                return false;    
+                return false;
             }
 
             return true;
@@ -474,7 +471,7 @@ public class CalibrationManager : Singleton<CalibrationManager> {
             if (Vector3.Distance(trackedImg.transform.position, ARCamera.position) <= 0.05f) {
                 trackedImg.gameObject.SetActive(false);
             } else {
-                bool wasActive = trackedImg.gameObject.activeSelf;                
+                bool wasActive = trackedImg.gameObject.activeSelf;
                 trackedImg.gameObject.SetActive(active);
             }
         }
@@ -518,7 +515,7 @@ public class CalibrationManager : Singleton<CalibrationManager> {
     }
 
     private void RunServerAutoCalibration() {
-        #if (UNITY_ANDROID || UNITY_IOS) && AR_ON
+#if (UNITY_ANDROID || UNITY_IOS) && AR_ON
         // If we used local calibration before, remove all local anchors and prepare for server calibration
         if (!UsingServerCalibration) {
             //Debug.Log("Server: Was using local calibration");
@@ -558,7 +555,6 @@ public class CalibrationManager : Singleton<CalibrationManager> {
         if (!Calibrated) {
             Notifications.Instance.ShowNotification("Calibrating", "Move the device around your workspace");
             TrackingLostAnimation.PlayVideo();
-            //yield return new WaitForSeconds(10f);
 
             // Check how many features and planes the tracking has detected
             yield return new WaitUntil(() => TrackingManager.Instance.GetTrackingQuality() == TrackingManager.TrackingQuality.GOOD_QUALITY);
@@ -570,13 +566,13 @@ public class CalibrationManager : Singleton<CalibrationManager> {
         }
 
         while (!Calibrated) {
-            
+
             markerDetectionState = MarkerDetectionState.Processing;
             bool calibrated = false;
             yield return CalibrateUsingServerAsync(success => {
                 calibrated = success;
                 markerDetectionState = success ? MarkerDetectionState.Success : MarkerDetectionState.Failure;
-            }, inverse: true, force:true);
+            }, inverse: true, force: true);
 
             Calibrated = calibrated;
 
@@ -603,13 +599,8 @@ public class CalibrationManager : Singleton<CalibrationManager> {
                         if (anchorQuality > 0) {
                             anchorQuality -= 0.05f;
                         }
-                        //if (recalibrateTime > 1f) {
-                        //    recalibrateTime -= 10f;
-                        //}
                     }
                 }, inverse: true, autoCalibrate: true);
-
-            //Debug.Log("Current quality: " + anchorQuality);
             }
 
             yield return new WaitForSeconds(AutoRecalibrateTime);
@@ -619,7 +610,7 @@ public class CalibrationManager : Singleton<CalibrationManager> {
     private void FrameReceived(ARCameraFrameEventArgs arCameraArgs) {
         if (!firstFrameReceived) {
             firstFrameReceived = true;
-            
+
             displayMatrix = arCameraArgs.displayMatrix;
             projectionMatrix = arCameraArgs.projectionMatrix;
             if (ARCameraManager.descriptor.supportsCameraConfigurations) {
@@ -634,19 +625,18 @@ public class CalibrationManager : Singleton<CalibrationManager> {
         Debug.Log("Calibrating using server");
 
         if (!ARCameraManager.TryGetIntrinsics(out XRCameraIntrinsics cameraIntrinsics)) {
-            //Debug.LogError("Did not get the intrinsics");
             callback?.Invoke(false);
             yield break;
         }
 
         // Get information about the device camera image.
         if (ARCameraManager.TryAcquireLatestCpuImage(out XRCpuImage image)) {
-                        // If successful, launch a coroutine that waits for the image
+            // If successful, launch a coroutine that waits for the image
             // to be ready, then apply it to a texture.
             //StartCoroutine(ProcessImage(image, cameraIntrinsics, inverse));
             yield return ProcessImage(image, cameraIntrinsics, success => {
                 callback?.Invoke(success);
-            }, inverse, autoCalibrate, force:force, showNotification:showNotification);
+            }, inverse, autoCalibrate, force: force, showNotification: showNotification);
 
             // It's safe to dispose the image before the async operation completes.
             image.Dispose();
@@ -695,11 +685,11 @@ public class CalibrationManager : Singleton<CalibrationManager> {
 
         // Create a texture if necessary.
         //Texture2D
-            m_Texture = new Texture2D(
-                request.conversionParams.outputDimensions.x,
-                request.conversionParams.outputDimensions.y,
-                request.conversionParams.outputFormat,
-                false);
+        m_Texture = new Texture2D(
+            request.conversionParams.outputDimensions.x,
+            request.conversionParams.outputDimensions.y,
+            request.conversionParams.outputFormat,
+            false);
 
         // Copy the image data into the texture.
         m_Texture.LoadRawTextureData(rawData);
@@ -711,12 +701,6 @@ public class CalibrationManager : Singleton<CalibrationManager> {
 
         string imageString = System.Text.Encoding.GetEncoding("iso-8859-1").GetString(m_Texture.EncodeToJPG());
 
-        //System.IO.File.WriteAllBytes(Application.persistentDataPath + "/image" + imageNum + ".jpg", m_Texture.EncodeToJPG());
-        //imageNum++;
-
-        //Debug.Log("Image size: " + request.conversionParams.outputDimensions.x + " x " + request.conversionParams.outputDimensions.y);
-        //Debug.Log("Camera Resolution: " + cameraConfiguration.Value);
-        //Debug.Log("Camera width: " + cameraConfiguration.Value.width + " height: " + cameraConfiguration.Value.height + " framerate: " + cameraConfiguration.Value.framerate);
 
 
         CameraParameters cameraParams = new CameraParameters(cx: (decimal) cameraIntrinsics.principalPoint.x,
@@ -724,12 +708,9 @@ public class CalibrationManager : Singleton<CalibrationManager> {
                                                      distCoefs: new List<decimal>() { 0, 0, 0, 0 },
                                                      fx: (decimal) cameraIntrinsics.focalLength.x,
                                                      fy: (decimal) cameraIntrinsics.focalLength.y);
-        //Debug.Log(cameraParams.ToString());
 
         if (inverse) {
-            GetMarkerPosition(cameraParams, imageString, autoCalibrate:autoCalibrate, force:force, showNotification:showNotification);            
-        } else {
-            //GetCameraPosition(cameraParams, imageString, autoCalibrate);
+            GetMarkerPosition(cameraParams, imageString, autoCalibrate: autoCalibrate, force: force, showNotification: showNotification);
         }
 
         yield return new WaitWhile(() => markerDetectionState == MarkerDetectionState.Processing);
@@ -739,7 +720,6 @@ public class CalibrationManager : Singleton<CalibrationManager> {
             callback?.Invoke(false);
         }
 
-        //GetMarkerCornersPosition(cameraParams, imageString);
     }
 
     public async Task GetMarkerCornersPosition(CameraParameters cameraParams, string image) {
@@ -747,8 +727,6 @@ public class CalibrationManager : Singleton<CalibrationManager> {
             List<IO.Swagger.Model.MarkerCorners> markerCorners = await WebsocketManager.Instance.GetMarkerCorners(cameraParams, image);
             foreach (MarkerCorners marker in markerCorners) {
                 foreach (Corner corner in marker.Corners) {
-                    
-                    //Vector3 position = Camera.main.ScreenToWorldPoint(new Vector3((1920f - ((float) corner.X * 3f)), (float) corner.Y * 2.25f, 0.5f));
                     Vector3 position = Camera.main.ScreenToWorldPoint(new Vector3((float) corner.X, (float) corner.Y, 0.5f));
                     position = displayMatrix.Value.MultiplyVector(position);
                     GameObject cornerGO = GameObject.CreatePrimitive(PrimitiveType.Cube);
@@ -764,14 +742,10 @@ public class CalibrationManager : Singleton<CalibrationManager> {
     public async void GetMarkerPosition(CameraParameters cameraParams, string image, bool autoCalibrate = false, bool force = false, bool showNotification = false) {
         try {
             // receive cameraPose from server
-            IO.Swagger.Model.EstimatedPose markerEstimatedPose = await WebsocketManager.Instance.GetCameraPose(cameraParams, image, inverse:true);
+            IO.Swagger.Model.EstimatedPose markerEstimatedPose = await WebsocketManager.Instance.GetCameraPose(cameraParams, image, inverse: true);
 
-            if ((float)markerEstimatedPose.Quality > anchorQuality || force) {
-                anchorQuality = (float)markerEstimatedPose.Quality;
-
-                
-                //Notifications.Instance.ShowNotification("Marker quality", markerEstimatedPose.Quality.ToString());
-
+            if ((float) markerEstimatedPose.Quality > anchorQuality || force) {
+                anchorQuality = (float) markerEstimatedPose.Quality;
                 IO.Swagger.Model.Pose markerPose = markerEstimatedPose.Pose;
 
                 Vector3 markerPositionReceived = new Vector3((float) markerPose.Position.X, (float) markerPose.Position.Y, (float) markerPose.Position.Z);
@@ -785,33 +759,11 @@ public class CalibrationManager : Singleton<CalibrationManager> {
 
                 // Marker Position
                 GameObject marker = Instantiate(MarkerPositionGameObject);
-                marker.transform.localPosition = ARCameraTransformMatrix.MultiplyPoint3x4(markerPosition); //ARCamera.TransformPoint(markerPosition);
-                marker.transform.localRotation = TransformConvertor.GetQuaternionFromMatrix(ARCameraTransformMatrix) * markerRotation; //ARCamera.transform.rotation * markerRotation; 
+                marker.transform.localPosition = ARCameraTransformMatrix.MultiplyPoint3x4(markerPosition);
+                marker.transform.localRotation = TransformConvertor.GetQuaternionFromMatrix(ARCameraTransformMatrix) * markerRotation;
                 marker.transform.localScale = new Vector3(1f, 1f, 1f);
 
                 CreateLocalAnchor(marker);
-
-
-                //System.IO.File.WriteAllBytes(Application.persistentDataPath + "/image" + imageNum + ".jpg", m_Texture.EncodeToJPG());
-                //imageNum++;
-
-                // Transformation Inversion to get Camera Position
-                //markerMatrix = Matrix4x4.TRS(markerPosition, markerRotation, Vector3.one); // create translation, rotation and scaling matrix
-                //Matrix4x4 cameraMatrix = markerMatrix.inverse; // inverse to get marker rotation matrix
-                //cameraMatrix.SetColumn(3, Vector4.zero); // set translation column to zeros
-                //Vector3 cameraPos = cameraMatrix.MultiplyPoint3x4(markerPosition); // transform cameraPosition by marker matrix
-                //cameraPos = -1 * cameraPos;
-
-                //if (WorldAnchorLocal != null) {
-                //    // Camera Position
-                //    GameObject camera = Instantiate(MarkerPositionGameObject, WorldAnchorLocal.transform);
-                //    camera.transform.localPosition = cameraPos;
-                //    camera.transform.localRotation = Quaternion.LookRotation(cameraMatrix.GetColumn(2), cameraMatrix.GetColumn(1));
-                //    camera.transform.localScale = new Vector3(0.05f, 0.05f, 0.05f);
-                //}
-
-                //Notifications.Instance.ShowNotification("Marker position", "GetCameraPose inverse true");
-
                 markerDetectionState = MarkerDetectionState.Success;
                 if (showNotification) {
                     Notifications.Instance.ShowNotification("Calibration successful", "");
@@ -821,7 +773,7 @@ public class CalibrationManager : Singleton<CalibrationManager> {
                 if (showNotification) {
                     Notifications.Instance.ShowNotification("No markers visible", "Find some markers and try again.");
                 }
-            }            
+            }
 
         } catch (RequestFailedException ex) {
             markerDetectionState = MarkerDetectionState.Failure;
@@ -855,59 +807,6 @@ public class CalibrationManager : Singleton<CalibrationManager> {
         return screenRotation * m;
     }
 
-
-    //public async void GetCameraPosition(CameraParameters cameraParams, string image, bool autoCalibrate = false) {
-    //    try {
-    //        // receive cameraPose from server
-    //        IO.Swagger.Model.EstimatedPose cameraEstimatedPose = await WebsocketManager.Instance.GetCameraPose(cameraParams, image, inverse:false);
-    //        IO.Swagger.Model.Pose cameraPose = cameraEstimatedPose.Pose;
-
-    //        Vector3 cameraPositionReceived = new Vector3((float) cameraPose.Position.X, (float) cameraPose.Position.Y, (float) cameraPose.Position.Z);
-    //        Quaternion cameraRotationReceived = new Quaternion((float) cameraPose.Orientation.X, (float) cameraPose.Orientation.Y,
-    //                                                            (float) cameraPose.Orientation.Z, (float) cameraPose.Orientation.W);
-
-    //        //Matrix4x4 cameraMatrix = AdjustMatrixByScreenOrientation(Matrix4x4.TRS(cameraPositionReceived, cameraRotationReceived, Vector3.one));
-    //        Matrix4x4 cameraMatrix = Matrix4x4.TRS(cameraPositionReceived, cameraRotationReceived, Vector3.one);
-
-    //        Vector3 cameraPosition = TransformConvertor.OpenCVToUnity(TransformConvertor.GetPositionFromMatrix(cameraMatrix));
-    //        Quaternion cameraRotation = TransformConvertor.OpenCVToUnity(TransformConvertor.GetQuaternionFromMatrix(cameraMatrix));
-
-
-    //        // Transformation Inversion to get Marker Position
-    //        cameraMatrix = Matrix4x4.TRS(cameraPosition, cameraRotation, Vector3.one); // create translation, rotation and scaling matrix
-    //        Matrix4x4 markerMatrix = cameraMatrix.inverse; // inverse to get marker rotation matrix
-    //        markerMatrix.SetColumn(3, Vector4.zero); // set translation column to zeros
-    //        Vector3 markerPos = markerMatrix.MultiplyPoint3x4(cameraPosition); // transform cameraPosition by marker matrix
-    //        markerPos = -1 * markerPos;
-
-    //        markerMatrix = AdjustMatrixByScreenOrientation(Matrix4x4.TRS(markerPos, TransformConvertor.GetQuaternionFromMatrix(markerMatrix), Vector3.one));
-
-    //        // Marker Position
-    //        GameObject marker = Instantiate(MarkerPositionGameObject); // create marker gameobject as child of the camera
-    //        marker.transform.localPosition = ARCameraTransformMatrix.MultiplyPoint3x4(TransformConvertor.GetPositionFromMatrix(markerMatrix)); //ARCamera.TransformPoint(markerPos);
-    //        marker.transform.localRotation = TransformConvertor.GetQuaternionFromMatrix(ARCameraTransformMatrix) * TransformConvertor.GetQuaternionFromMatrix(markerMatrix); //ARCamera.transform.rotation * Quaternion.LookRotation(markerMatrix.GetColumn(2), markerMatrix.GetColumn(1)); // get quaternion from rotation matrix
-    //        marker.transform.localScale = new Vector3(1f, 1f, 1f);
-
-    //        CreateLocalAnchor(marker);
-
-    //        //if (WorldAnchorLocal != null) {
-    //        //    // Camera Position
-    //        //    GameObject camera = Instantiate(MarkerPositionGameObject, WorldAnchorLocal.transform);        
-    //        //    camera.transform.localPosition = cameraPosition;
-    //        //    camera.transform.localRotation = cameraRotation;
-    //        //    camera.transform.localScale = new Vector3(0.05f, 0.05f, 0.05f);
-    //        //}
-
-    //        //Notifications.Instance.ShowNotification("Camera position", "GetCameraPose inverse false");
-
-    //        markerDetectionState = MarkerDetectionState.Success;
-
-    //    } catch (RequestFailedException ex) {
-    //        markerDetectionState = MarkerDetectionState.Failure;
-    //        Debug.Log("No markers visible");
-    //        Notifications.Instance.ShowNotification("No markers visible", ex.Message);
-    //    }
-    //}
 
     public void CreateLocalAnchor(GameObject marker) {
 #if (UNITY_ANDROID || UNITY_IOS) && AR_ON
@@ -967,15 +866,12 @@ public class CalibrationManager : Singleton<CalibrationManager> {
     public async Task ReceiveImageFromCamera() {
         // EXAMPLE OF LOADING IMAGE FROM CAMERA ON SERVER
         string image = await WebsocketManager.Instance.GetCameraColorImage("ID");
-        //Debug.Log("RECEIVED Image " + image);
         byte[] bytes = System.Text.Encoding.GetEncoding("iso-8859-1").GetBytes(image);
         Texture2D texture = new Texture2D(1, 1);
         texture.LoadImage(bytes);
         texture.Apply();
-        //File.WriteAllBytes(Application.persistentDataPath + "/images/Received.jpg", texture.EncodeToJPG());
-        //File.WriteAllBytes(Application.persistentDataPath + "/images/Received.jpg", bytes);
     }
 
-#endregion
+    #endregion
 
 }

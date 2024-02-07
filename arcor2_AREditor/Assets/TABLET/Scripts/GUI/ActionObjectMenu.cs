@@ -1,11 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
-using System;
-using DanielLochner.Assets.SimpleSideMenu;
-using Michsky.UI.ModernUIPack;
 using Base;
 using System.Collections.Generic;
-using static IO.Swagger.Model.UpdateObjectPoseUsingRobotRequestArgs;
 using Newtonsoft.Json;
 using System.Linq;
 using System.Threading.Tasks;
@@ -34,7 +30,7 @@ public class ActionObjectMenu : RightMenu<ActionObjectMenu> {
     protected List<IParameter> objectParameters = new List<IParameter>();
 
     private void Start() {
-        
+
         Debug.Assert(VisibilitySlider != null);
         Debug.Assert(InputDialog != null);
         Debug.Assert(ConfirmationDialog != null);
@@ -49,7 +45,6 @@ public class ActionObjectMenu : RightMenu<ActionObjectMenu> {
     }
 
     private void OnOverrideRemoved(object sender, ParameterEventArgs args) {
-        //Debug
         if (CurrentObject.TryGetParameter(args.Parameter.Name, out IO.Swagger.Model.Parameter parameter)) {
             if (overrides.TryGetValue(args.Parameter.Name, out ActionObjectParameterOverride parameterOverride)) {
                 parameterOverride.SetValue(Parameter.GetStringValue(parameter.Value, parameter.Type), false);
@@ -58,7 +53,6 @@ public class ActionObjectMenu : RightMenu<ActionObjectMenu> {
     }
 
     private void OnOverrideAddedOrUpdated(object sender, ParameterEventArgs args) {
-        //Debug.LogError("added");
         if (overrides.TryGetValue(args.Parameter.Name, out ActionObjectParameterOverride parameterOverride)) {
             parameterOverride.SetValue(Parameter.GetStringValue(args.Parameter.Value, args.Parameter.Type), true);
         }
@@ -160,13 +154,12 @@ public class ActionObjectMenu : RightMenu<ActionObjectMenu> {
 
     private void UpdateMenuScene() {
         if (CurrentObject.ObjectParameters.Count > 0) {
-            objectParameters = Parameter.InitParameters(CurrentObject.ObjectParameters.Values.ToList(), Parameters, OnChangeParameterHandler, DynamicContentLayout, CanvasRoot, false, false, null);
+            objectParameters = Parameter.InitParameters(CurrentObject.ObjectParameters.Values.ToList(), Parameters, OnChangeParameterHandler, DynamicContentLayout, CanvasRoot, false, false, null, null);
         }
         foreach (IParameter parameter in objectParameters) {
             parameter.SetInteractable(!SceneManager.Instance.SceneStarted);
         }
-        //SaveParametersBtn.gameObject.SetActive(CurrentObject.ObjectParameters.Count != 0);
-        
+
         parametersChanged = false;
     }
 
@@ -184,7 +177,7 @@ public class ActionObjectMenu : RightMenu<ActionObjectMenu> {
             overrides[param.Name] = overrideParam;
         }
 
-        
+
     }
 
     protected virtual void UpdateSaveBtn() {
@@ -239,8 +232,6 @@ public class ActionObjectMenu : RightMenu<ActionObjectMenu> {
         } else if (CurrentObject.TryGetParameter(parameterId, out IO.Swagger.Model.Parameter parameter)) {
             try {
                 if (JsonConvert.SerializeObject(newValue) != parameter.Value) {
-                    //parametersChanged = true;
-                    //SaveParametersBtn.SetInteractivity(true);
                     SaveParameters();
                 }
             } catch (JsonReaderException) {
@@ -256,9 +247,9 @@ public class ActionObjectMenu : RightMenu<ActionObjectMenu> {
             CurrentObject.SetVisibility(value / 100f);
     }
 
-    
 
-   
+
+
 
     public async void ShowNextAO() {
         if (!await CurrentObject.WriteUnlock())

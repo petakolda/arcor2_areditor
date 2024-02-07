@@ -1,5 +1,4 @@
 using System;
-using System.Threading.Tasks;
 using Base;
 using IO.Swagger.Model;
 using UnityEngine;
@@ -42,9 +41,6 @@ public class ActionObjectNoPose : ActionObject {
         throw new NotImplementedException();
     }
 
-    public override void OnClick(Click type) {
-        throw new NotImplementedException();
-    }
 
     public override void OnHoverEnd() {
         // should not do anything
@@ -59,7 +55,7 @@ public class ActionObjectNoPose : ActionObject {
     }
 
     public override void SetInteractivity(bool interactive) {
-        
+
     }
 
     public override void SetSceneOrientation(Quaternion orientation) {
