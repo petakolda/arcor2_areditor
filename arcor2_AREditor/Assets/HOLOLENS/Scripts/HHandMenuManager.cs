@@ -23,7 +23,7 @@ public class HHandMenuManager : Singleton<HHandMenuManager>
     public GameObject transfomButton;
     public GameObject copyObjectButton;
   //  public GameObject closeMenuButton;
- //   public GameObject closeDetailButton;
+ //   public gameobject closedetailbutton;
 
     public GameObject deleteButton;
 
@@ -32,16 +32,20 @@ public class HHandMenuManager : Singleton<HHandMenuManager>
     public Interactable addModelButton;
     public Interactable addObjectButton;
 
+    public GameObject oneMeterButton;
+    public GameObject rightAngleButton;
+
     public Interactable closeButton;
 
     public Interactable allAddButtons;
     public Interactable allMoreButtons;
+    public Interactable allBpTestButtons;
 
     public Interactable showScenesButton;
 
     public Interactable showProjectsButton;
 
-     public Interactable createProject;
+    public Interactable createProject;
 
     public GameObject models;
 
@@ -49,6 +53,7 @@ public class HHandMenuManager : Singleton<HHandMenuManager>
 
     public GameObject moreButtons;
     public GameObject addButtons;
+    public GameObject BpTestButtons;
 
     public TextMeshPro editorStatus;
 
@@ -66,9 +71,12 @@ public class HHandMenuManager : Singleton<HHandMenuManager>
         AddObject,
         OpenScenes,
         OpenProjects,
+        OneMeter,
+        RightAngle,
 
         AllAdd,
         AllMore,
+        AllBpTest,
 
         CreateProject,
         None
@@ -113,6 +121,9 @@ public class HHandMenuManager : Singleton<HHandMenuManager>
         listOfPreviousActions.Add(AllClickedEnum.OpenProjects, UnselectOpenProjectsScenes);
         listOfPreviousActions.Add(AllClickedEnum.AllAdd,  UnselectAddAll);
         listOfPreviousActions.Add(AllClickedEnum.AllMore, UnselectAddMore);
+        listOfPreviousActions.Add(AllClickedEnum.AllBpTest, UnselectAddBpTest);
+        //listOfPreviousActions.Add(AllClickedEnum.OneMeter, UnselectOneMeter);
+        //listOfPreviousActions.Add(AllClickedEnum.RightAngle, UnselectRightAngle);
 
         listOfNextActions.Add(AllClickedEnum.Transform, ( () => HSelectorManager.Instance.setSelectedAction(HSelectorManager.Instance.transformClicked) ) );
         listOfNextActions.Add(AllClickedEnum.Delete,  ( () => HSelectorManager.Instance.setSelectedAction(HSelectorManager.Instance.deleteClicked) ));
@@ -121,9 +132,12 @@ public class HHandMenuManager : Singleton<HHandMenuManager>
         listOfNextActions.Add(AllClickedEnum.AddAP,  ( () => HSelectorManager.Instance.clickedAddAPButton() ));
         listOfNextActions.Add(AllClickedEnum.OpenScenes,  OpenScenes);
         listOfNextActions.Add(AllClickedEnum.OpenProjects, OpenProjects);
+        listOfNextActions.Add(AllClickedEnum.OneMeter, (() => HSelectorManager.Instance.clickedOneMeterButton()));
+        listOfNextActions.Add(AllClickedEnum.RightAngle, (() => Debug.Log("Pridavam ap na KOLMICI")));
         listOfNextActions.Add(AllClickedEnum.Close, HEditorMenuScreen.Instance.CloseScene);
         listOfNextActions.Add(AllClickedEnum.AllAdd,( () => addButtons.SetActive(true)));
-        listOfNextActions.Add(AllClickedEnum.AllMore,( () => moreButtons.SetActive(true)));
+        listOfNextActions.Add(AllClickedEnum.AllMore, (() => moreButtons.SetActive(true)));
+        listOfNextActions.Add(AllClickedEnum.AllBpTest, (() => BpTestButtons.SetActive(true)));
         listOfNextActions.Add(AllClickedEnum.CreateProject,( () => CreateProject()));
 
         /**ALL BUTTONS*/
@@ -137,13 +151,17 @@ public class HHandMenuManager : Singleton<HHandMenuManager>
         addObjectButton.OnClick.AddListener(() => onSeletectedChanged(AllClickedEnum.AddObject));
         showScenesButton.OnClick.AddListener(() => {onSeletectedChanged(AllClickedEnum.OpenScenes); });
         showProjectsButton.OnClick.AddListener(() => {onSeletectedChanged(AllClickedEnum.OpenProjects);});
+        oneMeterButton.GetComponent<Interactable>().OnClick.AddListener(() => onSeletectedChanged(AllClickedEnum.OneMeter));
+        rightAngleButton.GetComponent<Interactable>().OnClick.AddListener(() => onSeletectedChanged(AllClickedEnum.RightAngle));
 
-     //   closeButton.OnClick.AddListener(() => {onSeletectedChanged(AllClickedEnum.Close);});
+        //closeButton.OnClick.AddListener(() => {onSeletectedChanged(AllClickedEnum.Close);});
 
         allAddButtons.OnClick.AddListener(() => onSeletectedChanged(AllClickedEnum.AllAdd));
 
         allMoreButtons.OnClick.AddListener(() => onSeletectedChanged(AllClickedEnum.AllMore));
         createProject.OnClick.AddListener(() => onSeletectedChanged(AllClickedEnum.CreateProject));
+
+        allBpTestButtons.OnClick.AddListener(() => onSeletectedChanged(AllClickedEnum.AllBpTest)); 
 
         GameManagerH.Instance.OnGameStateChanged += changeEditorStatus;
 
@@ -305,7 +323,14 @@ public class HHandMenuManager : Singleton<HHandMenuManager>
       
   }
 
-      public async void OpenScenes() {
+    public void UnselectAddBpTest() {
+        BpTestButtons.SetActive(false);
+        if (listOfNextActions.TryGetValue(actualClick, out UnityAction nextAction)) {
+            nextAction?.Invoke();
+        }
+    }
+
+    public async void OpenScenes() {
 
        
 

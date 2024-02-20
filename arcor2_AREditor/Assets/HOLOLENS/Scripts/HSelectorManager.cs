@@ -58,13 +58,23 @@ public class HSelectorManager : Singleton<HSelectorManager>
     }
 
 
-    public void clickedAddAPButton(){
+    public void clickedAddAPButton() {
         setSelectedAction(addActionPointClicked);
-        AddActionPointHandler.Instance.registerHandlers(); 
+        AddActionPointHandler.Instance.registerHandlers();
 
-      /*   setLastClicked(ClickedEnum.AddAction);
+        /*   setLastClicked(ClickedEnum.AddAction);
+          setSelectedAction(addActionPointClicked);
+          AddActionPointHandler.Instance.registerHandlers();*/
+    }
+
+
+    public void clickedOneMeterButton() {
         setSelectedAction(addActionPointClicked);
-        AddActionPointHandler.Instance.registerHandlers();*/
+        AddActionPointHandler.Instance.registerHandlers();
+
+        /*   setLastClicked(ClickedEnum.AddAction);
+            setSelectedAction(addActionPointClicked);
+            AddActionPointHandler.Instance.registerHandlers();*/
     }
 
     public bool isClickedOutputConnection(){
@@ -150,14 +160,13 @@ public class HSelectorManager : Singleton<HSelectorManager>
 
     public void addActionPointClicked() {
 
-        if (selectedObject is HAction3D action){
+        if (selectedObject is HAction3D action) {
             setSelectedAction(actionAddClicked);
-            HActionPickerMenu.Instance.Show( (HActionPoint) action.GetParentObject(), false);
+            HActionPickerMenu.Instance.Show((HActionPoint) action.GetParentObject(), false);
             HProjectManager.Instance.OnActionAddedToScene += OnActionAddedToScene;
 
 
-        }
-        else if (selectedObject is IActionPointParentH parent) {
+        } else if (selectedObject is IActionPointParentH parent) {
             CreateActionPoint(HProjectManager.Instance.GetFreeAPName(parent.GetName()), parent);
         } else {
             CreateActionPoint(HProjectManager.Instance.GetFreeAPName("global"), default);
@@ -259,14 +268,14 @@ public class HSelectorManager : Singleton<HSelectorManager>
     private async void CreateActionPoint(string name, IActionPointParentH parentId = null) {
 
         bool result = await HProjectManager.Instance.AddActionPoint(name, parentId);
-        if(result){
-           // HActionPickerMenu.Instance.Show(selectedObject);
+        if (result) {
+            // HActionPickerMenu.Instance.Show(selectedObject);
             setSelectedAction(actionAddClicked);
             //lockObject
             HProjectManager.Instance.OnActionAddedToScene += OnActionAddedToScene;
 
         }
-      
+
     }
 
 

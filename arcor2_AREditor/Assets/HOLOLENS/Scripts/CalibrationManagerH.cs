@@ -1,3 +1,5 @@
+#define REMOTING
+
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -79,7 +81,7 @@ using QRTracking;
 
 
          public void StartCalibration(object sender, EventArgs e){
-            #if !UNITY_EDITOR
+            #if !UNITY_EDITOR || REMOTING
                 QRCodesManager.Instance.StartQRTracking();
             #else
            //  GameManagerH.Instance.SceneSetParent( helpPr.transform);
@@ -90,16 +92,16 @@ using QRTracking;
          }
          public void SetCalibration(object sender, EventArgs e){
             Calibrated = false;
-        //  isScene = false;
-    #if !UNITY_EDITOR
+            //  isScene = false;
+            #if !UNITY_EDITOR || REMOTING
         
             GameManagerH.Instance.SceneSetParent(null);
            
             GameManagerH.Instance.SceneSetActive(false);
             QRCodesManager.Instance.StopQRTracking();
-          //  GetComponent<QRCodesManager>().StopQRTracking();
-    #endif
-    }
+            //  GetComponent<QRCodesManager>().StopQRTracking();
+            #endif
+          }
         private void Instance_QRCodesTrackingStateChanged(object sender, bool status)
         {
             if (!status)

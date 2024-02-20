@@ -683,34 +683,34 @@ public class HProjectManager : Base.Singleton<HProjectManager>
 
 
 
-        /// <summary>
-        /// Spawn action point into the project
-        /// </summary>
-        /// <param name="apData">Json describing action point</param>
-        /// <param name="actionPointParent">Parent of action point. If null, AP is spawned as global.</param>
-        /// <returns></returns>
+    /// <summary>
+    /// Spawn action point into the project
+    /// </summary>
+    /// <param name="apData">Json describing action point</param>
+    /// <param name="actionPointParent">Parent of action point. If null, AP is spawned as global.</param>
+    /// <returns></returns>
         public HActionPoint SpawnActionPoint(IO.Swagger.Model.ActionPoint apData, IActionPointParentH actionPointParent) {
-            Debug.Assert(apData != null);
-            GameObject AP;
-            if (actionPointParent == null) {               
-                AP = Instantiate(ActionPointPrefab, ActionPointsOrigin.transform);
-            } else {
-                AP = Instantiate(ActionPointPrefab, actionPointParent.GetSpawnPoint());
-            }
-            AP.transform.localScale = new Vector3(1f, 1f, 1f);
-            HActionPoint actionPoint = AP.GetComponent<HActionPoint>();
-            actionPoint.InitAP(apData, APSize, actionPointParent);
-            ActionPoints.Add(actionPoint.Data.Id, actionPoint);
-         //   OnActionPointAddedToScene?.Invoke(this, new ActionPointEventArgs(actionPoint));
-            return actionPoint;
+        Debug.Assert(apData != null);
+        GameObject AP;
+        if (actionPointParent == null) {
+            AP = Instantiate(ActionPointPrefab, ActionPointsOrigin.transform);
+        } else {
+            AP = Instantiate(ActionPointPrefab, actionPointParent.GetSpawnPoint());
         }
+        AP.transform.localScale = new Vector3(1f, 1f, 1f);
+        HActionPoint actionPoint = AP.GetComponent<HActionPoint>();
+        actionPoint.InitAP(apData, APSize, actionPointParent);
+        ActionPoints.Add(actionPoint.Data.Id, actionPoint);
+         //   OnActionPointAddedToScene?.Invoke(this, new ActionPointEventArgs(actionPoint));
+        return actionPoint;
+    }
 
-        
-        /// <summary>
-        /// Sets project metadata
-        /// </summary>
-        /// <param name="project"></param>
-        public void SetProjectMeta(BareProject project) {
+
+    /// <summary>
+    /// Sets project metadata
+    /// </summary>
+    /// <param name="project"></param>
+    public void SetProjectMeta(BareProject project) {
             if (ProjectMeta == null) {
                 ProjectMeta = new Project(sceneId: "", id: "", name: "");
             }
@@ -770,40 +770,39 @@ public class HProjectManager : Base.Singleton<HProjectManager>
         }
 
 
-        /// <summary>
-        /// Adds action point to the project
-        /// </summary>
-        /// <param name="name">Name of new action point</param>
-        /// <param name="parent">Parent object (global AP if parent is null)</param>
-        /// <returns></returns>
-        public async Task<bool> AddActionPoint(string name, IActionPointParentH parent) {
-            try {
-                Vector3 point;
-                Vector3 position_R;
-                Ray ray = Camera.main.ScreenPointToRay(new Vector3(Screen.width / 2, Screen.height / 2, 0f));
-                if(HandJointUtils.TryGetJointPose(TrackedHandJoint.IndexTip, Handedness.Any, out MixedRealityPose pose)){
-                    position_R = pose.Position;
-                }
-                else {
-                    position_R = ray.GetPoint(0.5f);
-                }
-                if (parent == null) {
-                    point = TransformConvertor.UnityToROS(GameManagerH.Instance.Scene.transform.InverseTransformPoint(position_R));
-                } else {
-                    point = TransformConvertor.UnityToROS(parent.GetTransform().InverseTransformPoint(position_R));
-                }                
-                Position position = DataHelper.Vector3ToPosition(point);
-                await WebSocketManagerH.Instance.AddActionPoint(name, parent == null ? "" : parent.GetId(), position);
-                
-                
-                return true;
-            } catch (RequestFailedException e) {
-                HNotificationManager.Instance.ShowNotification("Failed to add action point" +  e.Message);
-                return false;
+    /// <summary>
+    /// Adds action point to the project
+    /// </summary>
+    /// <param name="name">Name of new action point</param>
+    /// <param name="parent">Parent object (global AP if parent is null)</param>
+    /// <returns></returns>
+    public async Task<bool> AddActionPoint(string name, IActionPointParentH parent) {
+        try {
+            Vector3 point;
+            Vector3 position_R;
+            Ray ray = Camera.main.ScreenPointToRay(new Vector3(Screen.width / 2, Screen.height / 2, 0f));
+            if (HandJointUtils.TryGetJointPose(TrackedHandJoint.IndexTip, Handedness.Any, out MixedRealityPose pose)) {
+                position_R = pose.Position;
+            } else {
+                position_R = ray.GetPoint(0.5f);
             }
-        }
+            if (parent == null) {
+                point = TransformConvertor.UnityToROS(GameManagerH.Instance.Scene.transform.InverseTransformPoint(position_R));
+            } else {
+                point = TransformConvertor.UnityToROS(parent.GetTransform().InverseTransformPoint(position_R));
+            }
+            Position position = DataHelper.Vector3ToPosition(point);
+            await WebSocketManagerH.Instance.AddActionPoint(name, parent == null ? "" : parent.GetId(), position);
 
-           public string GetFreeActionName(string actionName) {
+
+            return true;
+        } catch (RequestFailedException e) {
+            HNotificationManager.Instance.ShowNotification("Failed to add action point" + e.Message);
+            return false;
+        }
+    }
+
+    public string GetFreeActionName(string actionName) {
             int i = 2;
             bool hasFreeName;
             string freeName = actionName;

@@ -14,6 +14,7 @@ using Base;
 using System.Threading.Tasks;
 using Microsoft.MixedReality.Toolkit.Input;
 using UnityEngine.XR.WSA.Input;
+using System.Drawing;
 
 public class HActionPickerMenu : Singleton<HActionPickerMenu>
 {
@@ -21,6 +22,7 @@ public class HActionPickerMenu : Singleton<HActionPickerMenu>
     public GameObject actinsList;
     public GameObject actionPrefab;
     public GameObject closeButton;
+    public GameObject previewAP;
 
     public GameObject actionsMenu;
 
@@ -49,11 +51,31 @@ public class HActionPickerMenu : Singleton<HActionPickerMenu>
 
     }
 
-    public async void Show(HActionPoint actionPoint, bool deleteActionPointOnCancel){
+
+    //public async void Show(HActionPoint actionPoint, bool deleteActionPointOnCancel) {
+    //    this.deleteActionPointOnCancel = deleteActionPointOnCancel;
+    //    currentActionPoint = actionPoint;
+    //    actionsMenu.transform.parent = actionPoint.transform;
+    //    actionsMenu.transform.localPosition = new Vector3(0, 0, -0.05f);
+    //    actionsMenu.SetActive(true);
+    //}
+
+    public async void Show(HActionPoint actionPoint, bool deleteActionPointOnCancel) {
         this.deleteActionPointOnCancel = deleteActionPointOnCancel;
         currentActionPoint = actionPoint;
+
+        // Calculate the position one meter away from the finger in the direction it's pointing
+        Vector3 actionPointPosition = actionPoint.transform.position + actionPoint.transform.right * -1.0f;
+
+        // Set the position of the action point
+        actionPoint.transform.position = actionPointPosition;
+
+        //previewAP = Instantiate(HProjectManager.Instance.ActionPointPrefab, actionPoint.transform);
+        //previewAP.transform.localScale = new Vector3(1f, 1f, 1f);
+        //previewAP.SetActive(true);
+
         actionsMenu.transform.parent = actionPoint.transform;
-        actionsMenu.transform.localPosition = new Vector3(0,0,-0.05f);
+        actionsMenu.transform.localPosition = new Vector3(0, 0, -0.05f); // Adjust this offset as needed
         actionsMenu.SetActive(true);
     }
 
